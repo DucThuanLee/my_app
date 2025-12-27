@@ -12,15 +12,12 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "products")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
 @Builder
 public class Product {
 
-    @Id
-    @GeneratedValue
+    @Id @GeneratedValue
     private UUID id;
 
     @NotBlank
@@ -36,13 +33,16 @@ public class Product {
 
     @NotNull
     @DecimalMin(value = "0.0", inclusive = false)
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
     @NotBlank
+    @Column(nullable = false)
     private String category;
 
+    @Column(nullable = false)
     private boolean isBestSeller;
 
+    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }

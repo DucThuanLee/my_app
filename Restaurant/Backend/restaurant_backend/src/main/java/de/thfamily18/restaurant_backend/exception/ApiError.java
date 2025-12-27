@@ -4,14 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Getter
 @AllArgsConstructor
 public class ApiError {
-
     private int status;
-    private String errorCode;   // NOT_FOUND, VALIDATION_ERROR
-    private String message;     // Translated in DE / EN
+    private String errorCode;
+    private String message;     // localized DE/EN
     private String path;
     private LocalDateTime timestamp;
+    private Map<String, String> fieldErrors; // optional
 }

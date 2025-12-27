@@ -6,6 +6,8 @@ public enum ErrorCode {
 
     NOT_FOUND(HttpStatus.NOT_FOUND, "error.not_found"),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "error.validation"),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "error.unauthorized"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "error.forbidden"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "error.internal");
 
     private final HttpStatus status;
@@ -16,11 +18,6 @@ public enum ErrorCode {
         this.messageKey = messageKey;
     }
 
-    public HttpStatus getStatus() {
-        return status;
-    }
-
-    public String getMessageKey() {
-        return messageKey;
-    }
+    public HttpStatus getStatus() { return status; }
+    public String getMessageKey() { return messageKey; }
 }

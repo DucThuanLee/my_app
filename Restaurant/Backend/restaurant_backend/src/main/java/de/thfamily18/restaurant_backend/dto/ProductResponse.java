@@ -13,5 +13,4 @@ public record ProductResponse(
         BigDecimal price,
         String category,
         boolean bestSeller
-) {
-}
+) {}

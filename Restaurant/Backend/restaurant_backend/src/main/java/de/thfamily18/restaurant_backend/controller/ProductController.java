@@ -20,8 +20,12 @@ public class ProductController {
     private final ProductService service;
 
     @GetMapping
-    public List<ProductResponse> getAll(
-            @RequestHeader(name = "Accept-Language", defaultValue = "de") String lang) {
+    public List<ProductResponse> getAll(@RequestHeader(name="Accept-Language", defaultValue="de") String lang) {
         return service.getAll(lang);
+    }
+
+    @GetMapping("/best")
+    public List<ProductResponse> best(@RequestHeader(name="Accept-Language", defaultValue="de") String lang) {
+        return service.getBest(lang);
     }
 }

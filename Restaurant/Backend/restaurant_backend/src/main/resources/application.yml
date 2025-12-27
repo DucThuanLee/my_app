@@ -1,5 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/thfamily18_restaurant
+    username: thfamily18
+    password: thfamily18
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  threads:
+    virtual:
+      enabled: true
+
+app:
+  jwt:
+    secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARS_123456"
+    issuer: "thfamily18"
+    accessTokenMinutes: 60
+
 springdoc:
-  api-docs:
-    path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
