@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/thfamily18_restaurant
     username: thfamily18
-    password: thfamily18
+    password: thfamily18@
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,7 +16,7 @@ spring:
 
 app:
   jwt:
-    secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARS_123456"
+    secret: "55396a037e2b8c4ec60407a11310a9490e0f650951188ece9b1994bfba046d15"
     issuer: "thfamily18"
     accessTokenMinutes: 60
 
