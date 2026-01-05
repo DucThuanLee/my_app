@@ -18,4 +18,12 @@ public class LoggingAspect {
         log.info("{} executed in {} ms", pjp.getSignature(), System.currentTimeMillis() - start);
         return result;
     }
+
+//    @Around("execution(* de.thfamily18.restaurant_backend..*(..))")
+//    public Object logTimeAll(ProceedingJoinPoint pjp) throws Throwable {
+//        long start = System.currentTimeMillis();
+//        Object result = pjp.proceed();
+//        log.info("{} all executed in {} ms", pjp.getSignature(), System.currentTimeMillis() - start);
+//        return result;
+//    }
 }

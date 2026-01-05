@@ -13,6 +13,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -30,6 +32,7 @@ public class AuthService {
                 .email(req.email())
                 .passwordHash(encoder.encode(req.password()))
                 .role(Role.USER)
+                .createdAt(LocalDateTime.now())
                 .build();
         repo.save(u);
         return new AuthResponse(jwtService.generate(u.getEmail(), u.getRole()));
