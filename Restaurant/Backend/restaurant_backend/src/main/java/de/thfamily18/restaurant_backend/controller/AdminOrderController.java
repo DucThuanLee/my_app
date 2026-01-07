@@ -40,4 +40,19 @@ public class AdminOrderController {
 
         return service.adminUpdateStatus(id, req.status(), lang);
     }
+
+//    @GetMapping("/{id}")
+//    public Order get(@PathVariable UUID id) {
+//        return orderRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+//    }
+//
+
+//    Note: In practice, updating paymentStatus via Stripe/PayPal webhook is the "correct" approach,
+//    while the admin endpoint is for handling exceptions.
+//    @PatchMapping("/{id}/payment-status")
+//    public Order updatePaymentStatus(@PathVariable UUID id, @RequestBody UpdatePaymentStatusRequest req) {
+//        Order o = orderRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+//        o.setPaymentStatus(req.status());
+//        return orderRepo.save(o);
+//    }
 }

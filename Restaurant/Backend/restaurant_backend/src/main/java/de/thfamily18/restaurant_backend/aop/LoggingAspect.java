@@ -2,6 +2,7 @@ package de.thfamily18.restaurant_backend.aop;
 
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,14 @@ public class LoggingAspect {
         Object result = pjp.proceed();
         log.info("{} executed in {} ms", pjp.getSignature(), System.currentTimeMillis() - start);
         return result;
+    }
+
+    @AfterThrowing(
+            pointcut = "execution(* de.thfamily18.restaurant_backend.controller..*(..))",
+            throwing = "ex"
+    )
+    public void logException(Exception ex) {
+        log.error("Exception occurred: {}", ex.getMessage());
     }
 
 //    @Around("execution(* de.thfamily18.restaurant_backend..*(..))")

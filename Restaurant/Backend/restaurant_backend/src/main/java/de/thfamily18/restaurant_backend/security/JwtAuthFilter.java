@@ -55,6 +55,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             chain.doFilter(request, response);
         } catch (Exception e) {
+
+//            // Token invalid/expired -> return 401
+//            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+//            response.setContentType("application/json");
+//            response.getWriter().write("{\"message\":\"Invalid or expired token\"}");
+
             // Do not set authentication => let the entrypoint handle 401 for the protected endpoint.
             SecurityContextHolder.clearContext();
             chain.doFilter(request, response);

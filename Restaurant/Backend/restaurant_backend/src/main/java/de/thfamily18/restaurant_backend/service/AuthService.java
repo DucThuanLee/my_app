@@ -26,7 +26,7 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest req) {
         if (repo.existsByEmail(req.email())) {
-            throw new IllegalArgumentException("Email exists");
+            throw new IllegalArgumentException("Email already exists");
         }
         User u = User.builder()
                 .email(req.email())
@@ -40,6 +40,7 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest req) {
         authManager.authenticate(new UsernamePasswordAuthenticationToken(req.email(), req.password()));
+        // If authentication is OK, retrieve the role from the database.
         User u = repo.findByEmail(req.email()).orElseThrow();
         return new AuthResponse(jwtService.generate(u.getEmail(), u.getRole()));
     }

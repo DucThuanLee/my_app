@@ -15,7 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity
+@EnableMethodSecurity // to use @PreAuthorize
 public class SecurityConfig {
 
     @Bean
@@ -31,7 +31,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
 
                         // Guest checkout
-                        .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/orders").permitAll() // guest checkout
 
                         // Auth endpoints
                         .requestMatchers("/auth/**").permitAll()
