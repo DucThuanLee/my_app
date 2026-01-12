@@ -20,6 +20,10 @@ app:
     issuer: "thfamily18"
     accessTokenMinutes: 60
 
+  admin:
+    email: "ducthuanle@threstaurant.de"
+    password: "Tuanh2020@@@@"
+
 springdoc:
   api-docs:
     path: /v3/api-docs

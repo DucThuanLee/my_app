@@ -5,10 +5,14 @@ import de.thfamily18.restaurant_backend.dto.ProductUpsertRequest;
 import de.thfamily18.restaurant_backend.entity.Product;
 import de.thfamily18.restaurant_backend.exception.ResourceNotFoundException;
 import de.thfamily18.restaurant_backend.repository.ProductRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -17,42 +21,54 @@ public class ProductService {
 
     private final ProductRepository repo;
 
-    public List<ProductResponse> getAll(String lang) {
+    public List<ProductResponse> getAll(String langHeader) {
+        String lang = normalizeLang(langHeader);
         return repo.findAll().stream().map(p -> toResponse(p, lang)).toList();
     }
 
-    public List<ProductResponse> getBest(String lang) {
+    public List<ProductResponse> getBest(String langHeader) {
+        String lang = normalizeLang(langHeader);
         return repo.findByIsBestSellerTrue().stream().map(p -> toResponse(p, lang)).toList();
     }
 
     public ProductResponse create(ProductUpsertRequest req) {
-        Product p = Product.builder()
-                .nameDe(req.nameDe())
-                .nameEn(req.nameEn())
-                .descriptionDe(req.descriptionDe())
-                .descriptionEn(req.descriptionEn())
-                .price(req.price())
-                .category(req.category())
-                .isBestSeller(req.bestSeller())
-                .build();
-        return toResponse(repo.save(p), "de");
+        Product p = mapToEntity(req);
+        Product saved = repo.save(p);
+        return toResponse(saved, "de"); // admin response default de
     }
 
     public ProductResponse update(UUID id, ProductUpsertRequest req) {
-        Product p = repo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-        p.setNameDe(req.nameDe());
-        p.setNameEn(req.nameEn());
-        p.setDescriptionDe(req.descriptionDe());
-        p.setDescriptionEn(req.descriptionEn());
-        p.setPrice(req.price());
-        p.setCategory(req.category());
-        p.setBestSeller(req.bestSeller());
-        return toResponse(repo.save(p), "de");
+        Product p = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        applyUpsert(p, req);
+        Product saved = repo.save(p);
+        return toResponse(saved, "de"); // admin response default de
     }
 
     public void delete(UUID id) {
         if (!repo.existsById(id)) throw new ResourceNotFoundException("Product not found");
         repo.deleteById(id);
+    }
+
+    @Transactional
+    public List<ProductResponse> bulkCreate(@Valid List<@Valid ProductUpsertRequest> reqs) {
+        List<Product> products = reqs.stream()
+                .map(this::mapToEntity)
+                .toList();
+
+        return repo.saveAll(products).stream()
+                .map(p -> toResponse(p, "de")) // admin response default de
+                .toList();
+    }
+
+    // ===== helpers =====
+
+    private String normalizeLang(String langHeader) {
+        if (langHeader == null || langHeader.isBlank()) return "de";
+        // Accept-Language can be "de-DE,de;q=0.9,en;q=0.8"
+        String first = langHeader.split(",")[0].trim();
+        String lang = first.split("-")[0].trim().toLowerCase(Locale.ROOT);
+        return lang.equals("en") ? "en" : "de";
     }
 
     private ProductResponse toResponse(Product p, String lang) {
@@ -65,5 +81,29 @@ public class ProductService {
                 .category(p.getCategory())
                 .bestSeller(p.isBestSeller())
                 .build();
+    }
+
+    private Product mapToEntity(ProductUpsertRequest req) {
+        Product p = Product.builder().build();
+        applyUpsert(p, req);
+        return p;
+    }
+
+    private void applyUpsert(Product p, ProductUpsertRequest req) {
+        p.setNameDe(req.nameDe());
+        p.setNameEn(req.nameEn());
+        p.setDescriptionDe(req.descriptionDe());
+        p.setDescriptionEn(req.descriptionEn());
+        p.setPrice(req.price());
+        p.setCategory(req.category());
+        p.setBestSeller(req.bestSeller());
+    }
+
+    public ProductResponse getOne(UUID id, String langHeader) {
+        Product p = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        String lang = normalizeLang(langHeader);
+        return toResponse(p, lang);
     }
 }

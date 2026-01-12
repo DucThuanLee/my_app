@@ -3,6 +3,9 @@ package de.thfamily18.restaurant_backend.controller;
 import de.thfamily18.restaurant_backend.dto.ProductResponse;
 import de.thfamily18.restaurant_backend.dto.ProductUpsertRequest;
 import de.thfamily18.restaurant_backend.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -23,6 +27,13 @@ public class AdminProductController {
     private final ProductService service;
 
     @PostMapping
+    @Operation(summary="Create product")
+    @ApiResponses({
+            @ApiResponse(responseCode="201", description="Created"),
+            @ApiResponse(responseCode="400", description="Validation error"),
+            @ApiResponse(responseCode="401", description="Unauthorized"),
+            @ApiResponse(responseCode="403", description="Forbidden (not ADMIN)")
+    })
     public ResponseEntity<ProductResponse> create(@Valid @RequestBody ProductUpsertRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(req));
     }
@@ -36,5 +47,28 @@ public class AdminProductController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<List<ProductResponse>> bulkCreate(
+            @Valid @RequestBody java.util.List<@Valid ProductUpsertRequest> reqs) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.bulkCreate(reqs));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get product by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Product found"),
+            @ApiResponse(responseCode = "404", description = "Product not found")
+    })
+    public ProductResponse getOne(
+            @PathVariable UUID id,
+            @RequestHeader(name = "Accept-Language", defaultValue = "de") String lang) {
+        return service.getOne(id, lang);
+    }
+
+    @GetMapping
+    public List<ProductResponse> list(){
+        return service.getAll("de"); // hoặc service.listAll()
     }
 }
