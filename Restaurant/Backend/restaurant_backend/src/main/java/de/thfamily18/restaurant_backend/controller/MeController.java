@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,7 +29,7 @@ public class MeController {
     })
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping
-    public MeResponse me(Authentication auth) {
+    public ResponseEntity<MeResponse> me(Authentication auth) {
         String email = auth.getName();
 
         Role role = auth.getAuthorities().stream()
@@ -38,7 +39,7 @@ public class MeController {
                 .findFirst()
                 .orElse(Role.USER);
 
-        return new MeResponse(email, role);
+        return ResponseEntity.ok(new MeResponse(email, role));
     }
 
 // method 2

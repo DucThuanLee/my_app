@@ -49,6 +49,12 @@ public class GlobalExceptionHandler {
         return build(ErrorCode.FORBIDDEN, req, locale, null);
     }
 
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleBusinessException(BusinessException ex, HttpServletRequest req, Locale locale) {
+        ErrorCode code = ex.getErrorCode();
+        return build(code, req, locale, null);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex, HttpServletRequest req, Locale locale) {
         log.error("INTERNAL_ERROR", ex);

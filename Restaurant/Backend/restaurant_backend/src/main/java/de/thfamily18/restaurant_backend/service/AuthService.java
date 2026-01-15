@@ -5,6 +5,7 @@ import de.thfamily18.restaurant_backend.dto.LoginRequest;
 import de.thfamily18.restaurant_backend.dto.RegisterRequest;
 import de.thfamily18.restaurant_backend.entity.Role;
 import de.thfamily18.restaurant_backend.entity.User;
+import de.thfamily18.restaurant_backend.exception.DuplicateEmailException;
 import de.thfamily18.restaurant_backend.repository.UserRepository;
 import de.thfamily18.restaurant_backend.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest req) {
         if (repo.existsByEmail(req.email())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new DuplicateEmailException(req.email());
         }
         User u = User.builder()
                 .email(req.email())

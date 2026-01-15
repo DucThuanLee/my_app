@@ -8,6 +8,7 @@ public enum ErrorCode {
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "error.validation"),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "error.unauthorized"),
     FORBIDDEN(HttpStatus.FORBIDDEN, "error.forbidden"),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "error.duplicate_email"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "error.internal");
 
     private final HttpStatus status;
