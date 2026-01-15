@@ -15,18 +15,18 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 
-import static org.hamcrest.Matchers.blankOrNullString;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.*;
 
 
-class AuthModuleIT extends AbstractIntegrationTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+class AuthModuleIT_backup {
 
     @Autowired
     MockMvc mvc;
