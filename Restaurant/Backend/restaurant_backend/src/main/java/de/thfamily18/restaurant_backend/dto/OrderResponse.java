@@ -13,6 +13,9 @@ import java.util.UUID;
 @Builder
 public record OrderResponse(
         UUID id,
+//        String customerName,
+//        String phone,
+//        String address,
         BigDecimal totalPrice,
         PaymentMethod paymentMethod,
         PaymentStatus paymentStatus,

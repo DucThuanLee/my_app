@@ -16,5 +16,5 @@ public record CreateOrderRequest(
 
         @NotNull PaymentMethod paymentMethod,
 
-        @NotEmpty @Valid List<OrderItemRequest> items
+        @NotEmpty @Valid List<CreateOrderItemRequest> items
 ) {}

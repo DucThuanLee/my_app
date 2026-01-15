@@ -55,8 +55,14 @@ public class Order {
 
     @PrePersist
     void prePersist() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
+        if (createdAt == null) createdAt = LocalDateTime.now();
+        if (orderStatus == null) orderStatus = OrderStatus.NEW;
+        if (paymentStatus == null) paymentStatus = PaymentStatus.PENDING;
+//        if (items == null) items = new ArrayList<>();
+    }
+
+    public void addItem(OrderItem item) {
+        items.add(item);
+        item.setOrder(this);
     }
 }

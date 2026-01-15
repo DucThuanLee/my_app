@@ -1,7 +1,7 @@
 package de.thfamily18.restaurant_backend.service;
 
 import de.thfamily18.restaurant_backend.dto.CreateOrderRequest;
-import de.thfamily18.restaurant_backend.dto.OrderItemRequest;
+import de.thfamily18.restaurant_backend.dto.CreateOrderItemRequest;
 import de.thfamily18.restaurant_backend.dto.OrderItemResponse;
 import de.thfamily18.restaurant_backend.dto.OrderResponse;
 import de.thfamily18.restaurant_backend.entity.*;
@@ -17,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -29,32 +30,70 @@ public class OrderService {
     private final ProductRepository productRepo;
     private final UserRepository userRepo;
 
-    public OrderResponse createGuestOrder(CreateOrderRequest req, String lang) {
+    // ===== Public / User =====
+
+    public OrderResponse createGuestOrder(CreateOrderRequest req, String langHeader) {
+        String lang = normalizeLang(langHeader);
         Order order = buildOrder(null, req);
         return toResponse(orderRepo.save(order), lang);
     }
 
-    public Page<OrderResponse> getOrdersForUser(String email, String lang, int page, int size) {
-        User u = userRepo.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        Page<Order> orders = orderRepo.findAllByUser_Id(u.getId(), PageRequest.of(page, size, Sort.by("createdAt").descending()));
+    public OrderResponse createUserOrder(String email, CreateOrderRequest req, String langHeader) {
+        String lang = normalizeLang(langHeader);
+
+        User u = userRepo.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Order order = buildOrder(u, req);
+        return toResponse(orderRepo.save(order), lang);
+    }
+
+    public Page<OrderResponse> getOrdersForUser(String email, String langHeader, int page, int size) {
+        String lang = normalizeLang(langHeader);
+
+        User u = userRepo.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Page<Order> orders = orderRepo.findAllByUser_Id(
+                u.getId(),
+                PageRequest.of(page, size, Sort.by("createdAt").descending())
+        );
+
         return orders.map(o -> toResponse(o, lang));
     }
 
-    public Page<OrderResponse> adminList(OrderStatus status, int page, int size, String lang) {
+    // ===== Admin =====
+
+    public Page<OrderResponse> adminList(OrderStatus status, int page, int size, String langHeader) {
+        String lang = normalizeLang(langHeader);
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Order> orders = (status == null) ? orderRepo.findAll(pageable) : orderRepo.findAllByOrderStatus(status, pageable);
+        Page<Order> orders = (status == null)
+                ? orderRepo.findAll(pageable)
+                : orderRepo.findAllByOrderStatus(status, pageable);
+
         return orders.map(o -> toResponse(o, lang));
     }
 
-    public OrderResponse adminUpdateStatus(UUID id, OrderStatus status, String lang) {
-        Order o = orderRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+    public OrderResponse adminUpdateStatus(UUID id, OrderStatus status, String langHeader) {
+        String lang = normalizeLang(langHeader);
+
+        if (status == null) {
+            throw new IllegalArgumentException("Order status must not be null");
+        }
+
+        Order o = orderRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
         o.setOrderStatus(status);
         return toResponse(orderRepo.save(o), lang);
     }
 
+    // ===== Core builder =====
+
     private Order buildOrder(User user, CreateOrderRequest req) {
         Order o = Order.builder()
-                .user(user)
+                .user(user) // nullable -> guest
                 .customerName(req.customerName())
                 .phone(req.phone())
                 .address(req.address())
@@ -62,42 +101,52 @@ public class OrderService {
                 .paymentStatus(PaymentStatus.PENDING)
                 .orderStatus(OrderStatus.NEW)
                 .totalPrice(BigDecimal.ZERO)
+                .createdAt(LocalDateTime.now()) // Avoid null when builder
+                .items(new ArrayList<>())
                 .build();
 
         BigDecimal total = BigDecimal.ZERO;
-        List<OrderItem> items = new ArrayList<>();
 
-        for (OrderItemRequest itemReq : req.items()) {
+        // IMPORTANT: ensure order-items relation is set correctly
+        o.getItems().clear();
+
+        for (CreateOrderItemRequest itemReq : req.items()) {
             Product p = productRepo.findById(itemReq.productId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + itemReq.productId()));
 
-            BigDecimal line = p.getPrice().multiply(BigDecimal.valueOf(itemReq.quantity()));
+            int qty = itemReq.quantity();
+            BigDecimal unitPrice = p.getPrice();
+            BigDecimal line = unitPrice.multiply(BigDecimal.valueOf(qty));
             total = total.add(line);
 
             OrderItem oi = OrderItem.builder()
-                    .order(o)
+                    .order(o)          // set FK
                     .product(p)
-                    .quantity(itemReq.quantity())
-                    .price(p.getPrice())
+                    .quantity(qty)
+                    .price(unitPrice)  // snapshot price at order time
                     .build();
-            items.add(oi);
+
+            // add to order collection
+            o.getItems().add(oi);
         }
 
         o.setTotalPrice(total);
-        o.getItems().clear();
-        o.getItems().addAll(items);
         return o;
     }
 
+    // ===== Mapping =====
+
     private OrderResponse toResponse(Order o, String lang) {
         boolean de = lang != null && lang.toLowerCase().startsWith("de");
-        List<OrderItemResponse> items = o.getItems().stream().map(oi -> OrderItemResponse.builder()
-                .productId(oi.getProduct().getId())
-                .productName(de ? oi.getProduct().getNameDe() : oi.getProduct().getNameEn())
-                .quantity(oi.getQuantity())
-                .price(oi.getPrice())
-                .build()
-        ).toList();
+
+        List<OrderItemResponse> items = o.getItems().stream()
+                .map(oi -> OrderItemResponse.builder()
+                        .productId(oi.getProduct().getId())
+                        .productName(de ? oi.getProduct().getNameDe() : oi.getProduct().getNameEn())
+                        .quantity(oi.getQuantity())
+                        .price(oi.getPrice())
+                        .build())
+                .toList();
 
         return OrderResponse.builder()
                 .id(o.getId())
@@ -109,4 +158,14 @@ public class OrderService {
                 .items(items)
                 .build();
     }
+
+    // ===== Utils =====
+
+    private String normalizeLang(String langHeader) {
+        if (langHeader == null || langHeader.isBlank()) return "de";
+        String first = langHeader.split(",")[0].trim();     // "de-DE"
+        String base = first.split("-")[0].trim().toLowerCase(); // "de"
+        return base.equals("en") ? "en" : "de";
+    }
 }
+
