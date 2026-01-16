@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,7 +32,7 @@ public class OrderService {
     private final UserRepository userRepo;
 
     // ===== Public / User =====
-
+    @Transactional
     public OrderResponse createGuestOrder(CreateOrderRequest req, String langHeader) {
         String lang = normalizeLang(langHeader);
         Order order = buildOrder(null, req);
@@ -48,6 +49,7 @@ public class OrderService {
         return toResponse(orderRepo.save(order), lang);
     }
 
+    @Transactional(readOnly = true)
     public Page<OrderResponse> getOrdersForUser(String email, String langHeader, int page, int size) {
         String lang = normalizeLang(langHeader);
 
@@ -63,7 +65,7 @@ public class OrderService {
     }
 
     // ===== Admin =====
-
+    @Transactional(readOnly = true)
     public Page<OrderResponse> adminList(OrderStatus status, int page, int size, String langHeader) {
         String lang = normalizeLang(langHeader);
 
@@ -74,7 +76,7 @@ public class OrderService {
 
         return orders.map(o -> toResponse(o, lang));
     }
-
+    @Transactional
     public OrderResponse adminUpdateStatus(UUID id, OrderStatus status, String langHeader) {
         String lang = normalizeLang(langHeader);
 

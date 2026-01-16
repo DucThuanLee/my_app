@@ -103,8 +103,10 @@ class OrderModuleIT extends AbstractIntegrationTest {
 
     // ===== tests =====
 
+
     @Test
-    void guest_createOrder_should201_andPersist_withNullUser() throws Exception {
+    void guest_createOrder_should201_and_then_adminGetAll_shouldContainOrder() throws Exception {
+        // 1) Create guest order
         String body = """
           {
             "customerName": "Guest A",
@@ -131,33 +133,44 @@ class OrderModuleIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.totalPrice").value(closeTo(13.90, 0.0001)))
                 .andExpect(jsonPath("$.items", hasSize(2)));
 
-        var orders = orderRepo.findAll();
-        assertEquals(1, orders.size());
-        Order o = orders.get(0);
+        // 2) Login admin
+        createUser("admin@test.de", "Password123!", Role.ADMIN);
+        String token = loginAndGetToken("admin@test.de", "Password123!");
 
-        assertNull(o.getUser(), "Guest order must have null user");
-        assertEquals(PaymentStatus.PENDING, o.getPaymentStatus());
-        assertEquals(OrderStatus.NEW, o.getOrderStatus());
-        assertEquals(2, o.getItems().size());
-        assertEquals(new BigDecimal("13.90"), o.getTotalPrice());
+        // 3) Verify via admin "get all orders" API (NOT using repository)
+        mvc.perform(get("/api/admin/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .param("page", "0")
+                        .param("size", "20")
+                        .header("Accept-Language", "de"))
+                .andExpect(status().isOk())
+                // Page<> -> content[]
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id").value(not(isEmptyOrNullString())))
+                .andExpect(jsonPath("$.content[0].paymentMethod").value("COD"))
+                .andExpect(jsonPath("$.content[0].paymentStatus").value("PENDING"))
+                .andExpect(jsonPath("$.content[0].orderStatus").value("NEW"))
+                .andExpect(jsonPath("$.content[0].totalPrice").value(closeTo(13.90, 0.0001)))
+                .andExpect(jsonPath("$.content[0].items", hasSize(2)));
     }
 
     @Test
-    void user_createOrder_should201_andPersist_withUser() throws Exception {
+    void user_createOrder_should201_and_then_userOrders_shouldContainIt() throws Exception {
         createUser("user@test.de", "Password123!", Role.USER);
         String token = loginAndGetToken("user@test.de", "Password123!");
 
+        // 1) Create order as logged-in user
         String body = """
-          {
-            "customerName": "User A",
-            "phone": "099999999",
-            "address": "Hamburg",
-            "paymentMethod": "COD",
-            "items": [
-              {"productId": "%s", "quantity": 1}
-            ]
-          }
-        """.formatted(p1.getId());
+      {
+        "customerName": "User A",
+        "phone": "099999999",
+        "address": "Hamburg",
+        "paymentMethod": "COD",
+        "items": [
+          {"productId": "%s", "quantity": 1}
+        ]
+      }
+    """.formatted(p1.getId());
 
         mvc.perform(post("/api/orders")
                         .header("Authorization", "Bearer " + token)
@@ -167,18 +180,25 @@ class OrderModuleIT extends AbstractIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.paymentStatus").value("PENDING"))
                 .andExpect(jsonPath("$.orderStatus").value("NEW"))
-                // If totalPrice is a number in JSON, use closeTo to avoid double errors.
                 .andExpect(jsonPath("$.totalPrice").value(closeTo(5.50, 0.0001)))
                 .andExpect(jsonPath("$.items", hasSize(1)))
                 .andExpect(jsonPath("$.items[0].productName").value("Classic Milk Tea"));
 
-        var orders = orderRepo.findAll();
-        assertEquals(1, orders.size());
-        Order o = orders.get(0);
-
-        assertNotNull(o.getUser(), "User order must have user");
-        assertEquals("user@test.de", o.getUser().getEmail());
+        // 2) Verify via API: /api/user/orders (NOT using repository)
+        mvc.perform(get("/api/user/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .param("page", "0")
+                        .param("size", "20")
+                        .header("Accept-Language", "en"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].paymentStatus").value("PENDING"))
+                .andExpect(jsonPath("$.content[0].orderStatus").value("NEW"))
+                .andExpect(jsonPath("$.content[0].totalPrice").value(closeTo(5.50, 0.0001)))
+                .andExpect(jsonPath("$.content[0].items", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].items[0].productName").value("Classic Milk Tea"));
     }
+
 
     @Test
     void userOrders_requiresAuth_should401() throws Exception {
