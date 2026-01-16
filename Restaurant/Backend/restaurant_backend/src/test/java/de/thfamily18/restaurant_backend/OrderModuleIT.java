@@ -93,12 +93,12 @@ class OrderModuleIT extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value(not(isEmptyOrNullString())))
+                .andExpect(jsonPath("$.accessToken").value(not(blankOrNullString())))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
-        return om.readTree(res).get("accessToken").asText();
+        return om.readTree(res).get("accessToken").asString();
     }
 
     // ===== tests =====
@@ -125,7 +125,7 @@ class OrderModuleIT extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(not(isEmptyOrNullString())))
+                .andExpect(jsonPath("$.id").value(not(blankOrNullString())))
                 .andExpect(jsonPath("$.paymentMethod").value("COD"))
                 .andExpect(jsonPath("$.paymentStatus").value("PENDING"))
                 .andExpect(jsonPath("$.orderStatus").value("NEW"))
@@ -146,7 +146,7 @@ class OrderModuleIT extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 // Page<> -> content[]
                 .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].id").value(not(isEmptyOrNullString())))
+                .andExpect(jsonPath("$.content[0].id").value(not(blankOrNullString())))
                 .andExpect(jsonPath("$.content[0].paymentMethod").value("COD"))
                 .andExpect(jsonPath("$.content[0].paymentStatus").value("PENDING"))
                 .andExpect(jsonPath("$.content[0].orderStatus").value("NEW"))
