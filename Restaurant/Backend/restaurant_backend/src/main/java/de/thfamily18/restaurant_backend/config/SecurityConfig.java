@@ -26,22 +26,25 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Swagger public
+                        /// ===== Public (no auth) =====
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-
-                        // Public products
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-
-                        // Guest checkout
-                        .requestMatchers(HttpMethod.POST, "/api/orders").permitAll() // guest checkout
-
-                        // Auth endpoints
                         .requestMatchers("/auth/**").permitAll()
 
-                        // Admin
+                        // Products public
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+
+                        // Guest checkout: create order
+                        .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
+
+                        // Stripe: webhook + create intent (guest can pay)
+                        .requestMatchers(HttpMethod.POST, "/api/payments/stripe/webhook").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/payments/stripe/intents").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/payments/stripe/status/**").permitAll() // if you use polling
+
+                        // ===== Admin =====
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // Everything else requires login
+                        // ===== Everything else =====
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

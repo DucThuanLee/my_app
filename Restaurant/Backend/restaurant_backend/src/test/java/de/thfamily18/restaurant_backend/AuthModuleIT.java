@@ -6,8 +6,6 @@ import de.thfamily18.restaurant_backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -57,8 +55,7 @@ class AuthModuleIT extends AbstractIntegrationTest {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-
-        return om.readTree(res).get("accessToken").asText();
+        return om.readTree(res).get("accessToken").asString();
     }
 
     // ===== tests =====
@@ -72,7 +69,7 @@ class AuthModuleIT extends AbstractIntegrationTest {
         mvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isCreated())  // nếu bạn trả 200 thì đổi thành isOk()
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.accessToken", not(blankOrNullString())));
 
         // verify user saved
@@ -190,7 +187,6 @@ class AuthModuleIT extends AbstractIntegrationTest {
 
         String token = loginAndGetToken("admin@test.de", "Password123!");
 
-        // Nếu bạn có GET /api/admin/orders -> 200 OK
         mvc.perform(get("/api/admin/orders")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());

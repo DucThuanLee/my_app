@@ -53,12 +53,18 @@ public class Order {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name="stripe_payment_intent_id", unique = true)
+    private String stripePaymentIntentId;
+
+    private LocalDateTime paidAt;
+
+
     @PrePersist
     void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (orderStatus == null) orderStatus = OrderStatus.NEW;
         if (paymentStatus == null) paymentStatus = PaymentStatus.PENDING;
-//        if (items == null) items = new ArrayList<>();
+        if (items == null) items = new ArrayList<>();
     }
 
     public void addItem(OrderItem item) {
