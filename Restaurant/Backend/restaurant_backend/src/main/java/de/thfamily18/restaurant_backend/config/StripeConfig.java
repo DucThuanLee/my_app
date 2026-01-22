@@ -10,6 +10,12 @@ public class StripeConfig {
 
     @Bean
     StripeClient stripeClient(@Value("${stripe.secretKey}") String secretKey) {
+        System.out.println("stripe.secretKey(from Spring) = " + secretKey);
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalStateException(
+                    "STRIPE_SECRET_KEY is missing. Set it as environment variable."
+            );
+        }
         return new StripeClient(secretKey);
     }
 }

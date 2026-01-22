@@ -70,6 +70,15 @@ public class StripePaymentService {
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 .setAmount(amount)
                 .setCurrency("eur")
+                // only for testing
+                .setAutomaticPaymentMethods(
+                        PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                .setEnabled(true)
+                                .setAllowRedirects(
+                                        PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER
+                                )
+                                .build()
+                )
                 // mapping back in webhook
                 .putMetadata("orderId", order.getId().toString())
                 .build();
