@@ -1,0 +1,1 @@
+COMMENT ON TABLE orders IS 'flyway test comment';

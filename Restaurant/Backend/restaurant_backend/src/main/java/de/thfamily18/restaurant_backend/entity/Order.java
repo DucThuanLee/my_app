@@ -40,24 +40,34 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private OrderStatus orderStatus = OrderStatus.NEW;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 
     @Column(nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
-
+    // ===== Stripe Payment =====
     @Column(name="stripe_payment_intent_id", unique = true)
     private String stripePaymentIntentId;
 
     private LocalDateTime paidAt;
-
+    // ===== Stripe Refund =====
+    @Column(name = "stripe_refund_id", unique = true)
+    private String stripeRefundId;
+    private LocalDateTime refundRequestedAt;
+    private LocalDateTime refundedAt;
+    // Optional: store requested/refunded amount (useful for partial refunds)
+    @Column(precision = 12, scale = 2)
+    private BigDecimal refundedAmount;
 
     @PrePersist
     void prePersist() {
@@ -68,6 +78,7 @@ public class Order {
     }
 
     public void addItem(OrderItem item) {
+        if (items == null) items = new ArrayList<>();
         items.add(item);
         item.setOrder(this);
     }

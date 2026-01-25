@@ -55,6 +55,12 @@ public class GlobalExceptionHandler {
         return build(code, req, locale, null);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleBadRequest(IllegalArgumentException ex,
+                                                     HttpServletRequest req, Locale locale) {
+        return build(ErrorCode.VALIDATION_ERROR, req, locale, null); // or create your own code
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex, HttpServletRequest req, Locale locale) {
         log.error("INTERNAL_ERROR", ex);
