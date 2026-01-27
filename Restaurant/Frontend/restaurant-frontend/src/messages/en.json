@@ -1,0 +1,11 @@
+{
+    "nav.menu": "Speisekarte",
+    "nav.cart": "Warenkorb",
+    "nav.checkout": "Bezahlen",
+    "nav.login": "Anmelden",
+    "actions.addToCart": "In den Warenkorb",
+    "cart.title": "Warenkorb",
+    "checkout.title": "Checkout",
+    "login.title": "Anmelden"
+  }
+  
