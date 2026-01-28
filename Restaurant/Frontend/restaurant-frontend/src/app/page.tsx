@@ -1,19 +1,11 @@
 import {headers} from "next/headers";
 import {redirect} from "next/navigation";
 
-async function detectLocale() {
-  const acceptLanguage = (await headers()).get("accept-language") ?? "";
+export default async function RootPage() {
+  const h = await headers();
+  const acceptLanguage = h.get("accept-language") ?? "";
+  const primary = acceptLanguage.split(",")[0]?.trim().toLowerCase() ?? "";
 
-  // ưu tiên English nếu browser dùng en
-  if (acceptLanguage.toLowerCase().startsWith("en")) {
-    return "en";
-  }
-
-  // fallback mặc định (chuẩn Đức)
-  return "de";
-}
-
-export default function RootPage() {
-  const locale = detectLocale();
+  const locale = primary.startsWith("en") ? "en" : "de";
   redirect(`/${locale}`);
 }

@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  // turbopack: {}
+  turbopack: {}
 };
 
 export default withNextIntl(nextConfig);

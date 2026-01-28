@@ -1,0 +1,58 @@
+{
+  "home": {
+    "badge": "Fresh • Fast • Local",
+    "badge2": "Made with love",
+
+    "heroTitle": "Milk Tea & Street Food",
+    "heroTitle2": "Made Fresh Every Day",
+    "heroSubtitle": "Order your favorite drinks and snacks online. Guest checkout is available — no account required.",
+
+    "ctaMenu": "View Menu",
+    "ctaOrder": "Order Now",
+
+    "perkFast": "Fast preparation",
+    "perkGuest": "Guest checkout",
+    "perkPayment": "Stripe & PayPal",
+
+    "popularToday": "Popular Today",
+    "bestSellerTag": "Best Seller",
+
+    "item1": "Brown Sugar Milk Tea",
+    "item2": "Iced Latte",
+    "item3": "Chicken Karaage",
+
+    "etaLabel": "Estimated delivery time",
+    "etaValue": "25–35 minutes",
+
+    "bestSellersTitle": "Best Sellers",
+    "bestSellersSubtitle": "Most-loved items picked by our customers.",
+    "seeAll": "See all",
+    "addToCart": "Add to cart",
+    "details": "Details",
+
+    "bs1Name": "Brown Sugar Milk Tea",
+    "bs1Desc": "Rich caramel flavor with chewy tapioca pearls.",
+    "bs2Name": "Iced Latte",
+    "bs2Desc": "Smooth espresso with creamy milk over ice.",
+    "bs3Name": "Chicken Karaage",
+    "bs3Desc": "Crispy Japanese-style fried chicken bites.",
+
+    "categories": "Our Categories",
+    "catMilkTea": "Milk Tea",
+    "catMilkTeaDesc": "Classic, fruity or brown sugar milk tea with toppings.",
+    "catCoffee": "Coffee",
+    "catCoffeeDesc": "Espresso, latte and iced coffee for your daily boost.",
+    "catSnacks": "Snacks",
+    "catSnacksDesc": "Perfect side dishes to enjoy with your drinks.",
+    "explore": "Explore",
+
+    "info1Title": "Guest checkout",
+    "info1Desc": "Order quickly without creating an account.",
+    "info2Title": "Secure payments",
+    "info2Desc": "Pay safely with Stripe or PayPal (and more later).",
+    "info3Title": "Fast pickup & delivery",
+    "info3Desc": "We prepare orders fast, so you can enjoy them sooner.",
+
+    "brand": "Milk Tea Restaurant"
+  }
+}
