@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/thfamily18_restaurant?currentSchema=public
-    username: thfamily18
-    password: thfamily18@
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
 # Updates should only be used in the Development (Dev) environment.
   # In a production environment, it's recommended to set it to none or validate and use DB version control tools like Liquibase or Flyway to ensure data security.
   flyway:
@@ -35,18 +35,22 @@ logging:
 
 app:
   jwt:
-    secret: "55396a037e2b8c4ec60407a11310a9490e0f650951188ece9b1994bfba046d15"
+    secret: ${JWT_SECRET}
     issuer: "thfamily18"
     accessTokenMinutes: 60
 
   admin:
-    email: "ducthuanle@threstaurant.de"
-    password: "Tuanh2020@@@@"
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
 
   payment:
     ttlMinutes: 30
 
   debugConfig: "HELLO_FLYWAY"
+
+  mail:
+    from: ${EMAIL_FROM}
+    region: "eu-central-1"
 
 springdoc:
   api-docs:
@@ -56,4 +60,4 @@ springdoc:
 
 stripe:
   secretKey: ${STRIPE_SECRET_KEY}          # sk_test_...
-  webhookSecret: ${STRIPE_WEBHOOK_SECRET}  # whsec_... (Stripe CLI listen hoặc dashboard)
+  webhookSecret: ${STRIPE_WEBHOOK_SECRET}  # whsec_... (Stripe CLI listen or dashboard)
