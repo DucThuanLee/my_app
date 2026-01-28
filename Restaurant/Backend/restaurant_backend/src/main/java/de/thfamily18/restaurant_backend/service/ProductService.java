@@ -17,19 +17,31 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ProductService {
 
     private final ProductRepository repo;
 
-    public List<ProductResponse> getAll(String langHeader) {
-        String lang = normalizeLang(langHeader);
-        return repo.findAll().stream().map(p -> toResponse(p, lang)).toList();
+    public List<ProductResponse> getProducts(String lang, String category) {
+        List<Product> products = (category == null || category.isBlank())
+                ? repo.findAll()
+                : repo.findByCategoryIgnoreCase(category.trim());
+
+        return products.stream()
+                .map(p -> toResponse(p, lang))
+                .toList();
     }
 
-    public List<ProductResponse> getBest(String langHeader) {
-        String lang = normalizeLang(langHeader);
-        return repo.findByIsBestSellerTrue().stream().map(p -> toResponse(p, lang)).toList();
+    public List<ProductResponse> getBestSellers(String lang, String category) {
+        List<Product> products = (category == null || category.isBlank())
+                ? repo.findByBestSellerTrue()
+                : repo.findByBestSellerTrueAndCategoryIgnoreCase(category.trim());
+
+        return products.stream()
+                .map(p -> toResponse(p, lang))
+                .toList();
     }
+
 
     public ProductResponse create(ProductUpsertRequest req) {
         Product p = mapToEntity(req);

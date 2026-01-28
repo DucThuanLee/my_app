@@ -21,37 +21,41 @@ import java.util.UUID;
 @RequestMapping("/api/admin/products")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@Tag(name="Admin Products")
+@Tag(name = "Admin Products")
 public class AdminProductController {
 
     private final ProductService service;
 
     @PostMapping
-    @Operation(summary="Create product")
+    @Operation(summary = "Create product")
     @ApiResponses({
-            @ApiResponse(responseCode="201", description="Created"),
-            @ApiResponse(responseCode="400", description="Validation error"),
-            @ApiResponse(responseCode="401", description="Unauthorized"),
-            @ApiResponse(responseCode="403", description="Forbidden (not ADMIN)")
+            @ApiResponse(responseCode = "201", description = "Created"),
+            @ApiResponse(responseCode = "400", description = "Validation error"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden (not ADMIN)")
     })
     public ResponseEntity<ProductResponse> create(@Valid @RequestBody ProductUpsertRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(req));
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update product")
     public ProductResponse update(@PathVariable UUID id, @Valid @RequestBody ProductUpsertRequest req) {
         return service.update(id, req);
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete product")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/bulk")
+    @Operation(summary = "Bulk create products")
     public ResponseEntity<List<ProductResponse>> bulkCreate(
-            @Valid @RequestBody java.util.List<@Valid ProductUpsertRequest> reqs) {
+            @Valid @RequestBody List<@Valid ProductUpsertRequest> reqs
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.bulkCreate(reqs));
     }
 
@@ -63,12 +67,26 @@ public class AdminProductController {
     })
     public ProductResponse getOne(
             @PathVariable UUID id,
-            @RequestHeader(name = "Accept-Language", defaultValue = "de") String lang) {
+            @RequestHeader(name = "Accept-Language", defaultValue = "de") String lang
+    ) {
         return service.getOne(id, lang);
     }
 
     @GetMapping
-    public List<ProductResponse> list(){
-        return service.getAll("de"); // hoặc service.listAll()
+    @Operation(summary = "List products (optionally filter by category)")
+    public List<ProductResponse> list(
+            @RequestHeader(name = "Accept-Language", defaultValue = "de") String lang,
+            @RequestParam(required = false) String category
+    ) {
+        return service.getProducts(lang, category);
+    }
+
+    @GetMapping("/best")
+    @Operation(summary = "List best seller products (optionally filter by category)")
+    public List<ProductResponse> best(
+            @RequestHeader(name = "Accept-Language", defaultValue = "de") String lang,
+            @RequestParam(required = false) String category
+    ) {
+        return service.getBestSellers(lang, category);
     }
 }
