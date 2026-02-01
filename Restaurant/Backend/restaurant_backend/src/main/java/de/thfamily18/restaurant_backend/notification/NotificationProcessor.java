@@ -3,11 +3,12 @@ package de.thfamily18.restaurant_backend.notification;
 import de.thfamily18.restaurant_backend.notification.mail.EmailSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -15,50 +16,104 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationProcessor {
 
+    private static final int BATCH_SIZE = 20;
+
     private final NotificationRepository repo;
-    @Qualifier("logEmailSender")
+    private final TransactionTemplate tx;
     private final EmailSender emailSender;
 
-    // Scan every 5 seconds (dev). Prod can scan every 10-30 seconds.
+
+    /**
+     * Poll due notifications and process them.
+     * The email sending is intentionally OUTSIDE transaction.
+     */
     @Scheduled(fixedDelay = 5000)
     public void processDue() {
-        List<Notification> due = repo.findDue(LocalDateTime.now());
-        if (due.isEmpty()) return;
+        List<SendTask> tasks = claimBatch();
+        if (tasks.isEmpty()) return;
 
-        for (Notification n : due) {
+        for (SendTask t : tasks) {
             try {
-                n.setStatus(NotificationStatus.SENDING);
-                repo.save(n);
+                // 1) Outside transaction: do the external side effect
+                emailSender.send(t.recipient(), subjectOf(t), bodyOf(t));
 
-                // Build the minimum email content (template it later).
-                String subject = subjectOf(n);
-                String body = bodyOf(n);
-
-                emailSender.send(n.getRecipient(), subject, body);
-
-                n.setStatus(NotificationStatus.SENT);
-                n.setSentAt(LocalDateTime.now());
-                n.setLastError(null);
-                repo.save(n);
+                // 2) Tx #2: mark SENT
+                markSent(t.notificationId());
 
             } catch (Exception ex) {
-                log.error("Send notification failed id={} type={} to={}", n.getId(), n.getType(), n.getRecipient(), ex);
+                log.error("Send notification failed id={} type={} to={}",
+                        t.notificationId(), t.type(), t.recipient(), ex);
 
-                int attempts = n.getAttempts() + 1;
-                n.setAttempts(attempts);
-                n.setStatus(NotificationStatus.FAILED);
-                n.setLastError(trim(ex.getMessage(), 500));
-
-                // backoff đơn giản: 10s, 30s, 2m, 10m...
-                n.setNextAttemptAt(LocalDateTime.now().plusSeconds(backoffSeconds(attempts)));
-
-                repo.save(n);
+                // Tx #2: mark FAILED + backoff
+                markFailed(t.notificationId(), ex);
             }
         }
     }
 
-    private String subjectOf(Notification n) {
-        return switch (n.getType()) {
+    /**
+     * Tx #1: lock a batch and mark them as SENDING (PROCESSING).
+     */
+    private List<SendTask> claimBatch() {
+        return tx.execute(status -> {
+            List<Notification> locked = repo.lockNextReady(LocalDateTime.now(), BATCH_SIZE);
+            if (locked.isEmpty()) return List.of();
+
+            List<SendTask> out = new ArrayList<>(locked.size());
+            for (Notification n : locked) {
+                n.setStatus(NotificationStatus.SENDING); // "PROCESSING"
+                n.setLastError(null);
+                // Optional: increment attempts when actually trying (some teams do it here)
+                // n.setAttempts(n.getAttempts() + 1);
+
+                out.add(new SendTask(
+                        n.getId(),
+                        n.getRecipient(),
+                        n.getType(),
+                        n.getOrderId(),
+                        n.getPayload(),
+                        n.getAttempts()
+                ));
+            }
+            // JPA dirty-check will flush on commit
+            return out;
+        });
+    }
+
+    /**
+     * Tx #2: mark SENT.
+     */
+    private void markSent(java.util.UUID id) {
+        tx.executeWithoutResult(status -> {
+            repo.updateAfterSend(
+                    id,
+                    NotificationStatus.SENT,
+                    null,
+                    LocalDateTime.now(),
+                    LocalDateTime.now(),
+                    0 // keep as-is? see note below
+            );
+        });
+    }
+
+    /**
+     * Tx #2: mark FAILED, increment attempts and schedule retry.
+     */
+    private void markFailed(java.util.UUID id, Exception ex) {
+        tx.executeWithoutResult(status -> {
+            Notification n = repo.findById(id).orElse(null);
+            if (n == null) return;
+
+            int attempts = n.getAttempts() + 1;
+
+            n.setAttempts(attempts);
+            n.setStatus(NotificationStatus.FAILED);
+            n.setLastError(NotificationRetryPolicy.trim(ex.getMessage(), 500));
+            n.setNextAttemptAt(LocalDateTime.now().plusSeconds(NotificationRetryPolicy.backoffSeconds(attempts)));
+        });
+    }
+
+    private String subjectOf(SendTask t) {
+        return switch (t.type()) {
             case PAYMENT_SUCCEEDED -> "Payment received";
             case REFUND_SUCCEEDED -> "Refund processed";
             case REFUND_REQUESTED -> "Refund requested";
@@ -66,25 +121,23 @@ public class NotificationProcessor {
         };
     }
 
-    private String bodyOf(Notification n) {
-        // tối thiểu cho test
-        return "Notification type: " + n.getType()
-                + "\nOrderId: " + n.getOrderId()
+    private String bodyOf(SendTask t) {
+        return "Notification type: " + t.type()
+                + "\nOrderId: " + t.orderId()
                 + "\nTime: " + LocalDateTime.now()
-                + (n.getPayload() != null ? "\nPayload: " + n.getPayload() : "");
+                + (t.payload() != null ? "\nPayload: " + t.payload() : "");
     }
 
-    private long backoffSeconds(int attempts) {
-        return switch (attempts) {
-            case 1 -> 10;
-            case 2 -> 30;
-            case 3 -> 120;
-            default -> 600;
-        };
-    }
-
-    private String trim(String s, int max) {
-        if (s == null) return null;
-        return s.length() <= max ? s : s.substring(0, max);
-    }
+    /**
+     * Minimal data needed outside transaction.
+     * Never pass entity objects outside tx.
+     */
+    public record SendTask(
+            java.util.UUID notificationId,
+            String recipient,
+            NotificationType type,
+            java.util.UUID orderId,
+            String payload,
+            int attempts
+    ) {}
 }

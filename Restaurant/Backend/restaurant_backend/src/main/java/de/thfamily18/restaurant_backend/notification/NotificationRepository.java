@@ -1,8 +1,7 @@
 package de.thfamily18.restaurant_backend.notification;
 
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
@@ -11,14 +10,37 @@ import java.util.UUID;
 
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
-    // Get jobs that are due to be submitted (lock them to prevent multiple instances from submitting the same job).
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    /**
+     * Lock a batch of due notifications using Postgres SKIP LOCKED.
+     * This prevents multiple workers from processing the same row.
+     */
+    @Query(value = """
+        select *
+        from notifications
+        where status in ('PENDING','FAILED')
+          and next_attempt_at <= :now
+        order by created_at asc
+        limit :limit
+        for update skip locked
+        """, nativeQuery = true)
+    List<Notification> lockNextReady(LocalDateTime now, int limit);
+
+    @Modifying
     @Query("""
-           select n from Notification n
-           where n.status in ('PENDING','FAILED')
-             and n.nextAttemptAt <= :now
-           order by n.createdAt asc
-           """)
-    // Pageable???
-    List<Notification> findDue(LocalDateTime now);
+        update Notification n
+           set n.status = :status,
+               n.lastError = :lastError,
+               n.sentAt = :sentAt,
+               n.nextAttemptAt = :nextAttemptAt,
+               n.attempts = :attempts
+         where n.id = :id
+    """)
+    int updateAfterSend(
+            UUID id,
+            NotificationStatus status,
+            String lastError,
+            LocalDateTime sentAt,
+            LocalDateTime nextAttemptAt,
+            int attempts
+    );
 }
