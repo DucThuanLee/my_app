@@ -31,11 +31,11 @@ public class Notification {
     @Builder.Default
     private NotificationChannel channel = NotificationChannel.EMAIL;
 
-    // email, phone, deviceToken... (hiện tại chỉ EMAIL)
+    // Destination address (email/phone/deviceToken...). Currently only EMAIL is supported.
     @Column(nullable = false, length = 320)
     private String recipient;
 
-    // Liên kết tới domain object để build nội dung (ví dụ order receipt/refund)
+    // Reference to a domain object to build the message content (e.g. order receipt/refund).
     @Column(name = "order_id")
     private UUID orderId;
 
@@ -48,11 +48,11 @@ public class Notification {
     @Builder.Default
     private int attempts = 0;
 
-    @Column(name = "next_attempt_at", nullable = false)
+    @Column(name = "next_attempt_at")
     @Builder.Default
     private LocalDateTime nextAttemptAt = LocalDateTime.now();
 
-    // Lưu lỗi gần nhất (ngắn thôi)
+    // Last error message (keep it short).
     @Column(name = "last_error", length = 500)
     private String lastError;
 
@@ -63,16 +63,24 @@ public class Notification {
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
 
-    // Optional: metadata dạng JSON string (variables cho template)
-    // Nếu chưa muốn JSON column thì để TEXT.
+    // Optional: template variables serialized as JSON.
+    // If you don't want a JSON column yet, keep it as TEXT.
     @Column(name="payload", columnDefinition = "text")
     private String payload;
+
+    @Column(name = "processing_started_at")
+    private LocalDateTime processingStartedAt;
+
 
     @PrePersist
     void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
-        if (nextAttemptAt == null) nextAttemptAt = LocalDateTime.now();
         if (status == null) status = NotificationStatus.PENDING;
         if (channel == null) channel = NotificationChannel.EMAIL;
+
+        // Only schedule retries for retryable states.
+        if (nextAttemptAt == null && (status == NotificationStatus.PENDING || status == NotificationStatus.FAILED)) {
+            nextAttemptAt = LocalDateTime.now();
+        }
     }
 }

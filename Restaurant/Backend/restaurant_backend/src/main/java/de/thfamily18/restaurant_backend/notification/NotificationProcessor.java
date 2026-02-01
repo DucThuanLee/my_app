@@ -10,6 +10,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -17,7 +18,11 @@ import java.util.List;
 public class NotificationProcessor {
 
     private static final int BATCH_SIZE = 20;
-
+    /**
+     * If a notification stays in SENDING longer than this,
+     * we assume the worker crashed and allow re-claim.
+     */
+    private static final int SENDING_TIMEOUT_MINUTES = 5;
     private final NotificationRepository repo;
     private final TransactionTemplate tx;
     private final EmailSender emailSender;
@@ -38,7 +43,7 @@ public class NotificationProcessor {
                 emailSender.send(t.recipient(), subjectOf(t), bodyOf(t));
 
                 // 2) Tx #2: mark SENT
-                markSent(t.notificationId());
+                markSent(t);
 
             } catch (Exception ex) {
                 log.error("Send notification failed id={} type={} to={}",
@@ -54,13 +59,16 @@ public class NotificationProcessor {
      * Tx #1: lock a batch and mark them as SENDING (PROCESSING).
      */
     private List<SendTask> claimBatch() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime sendingTimeout = now.minusMinutes(SENDING_TIMEOUT_MINUTES);
         return tx.execute(status -> {
-            List<Notification> locked = repo.lockNextReady(LocalDateTime.now(), BATCH_SIZE);
+            List<Notification> locked = repo.lockNextReady(now, sendingTimeout, BATCH_SIZE);
             if (locked.isEmpty()) return List.of();
 
             List<SendTask> out = new ArrayList<>(locked.size());
             for (Notification n : locked) {
                 n.setStatus(NotificationStatus.SENDING); // "PROCESSING"
+                n.setProcessingStartedAt(LocalDateTime.now());
                 n.setLastError(null);
                 // Optional: increment attempts when actually trying (some teams do it here)
                 // n.setAttempts(n.getAttempts() + 1);
@@ -81,16 +89,21 @@ public class NotificationProcessor {
 
     /**
      * Tx #2: mark SENT.
+     *
+     * We keep `attempts` as-is (taken from the claimed task),
+     * clear `processingStartedAt`, and set `nextAttemptAt` to NULL because
+     * a successfully sent notification should not be retried.
      */
-    private void markSent(java.util.UUID id) {
+    private void markSent(SendTask t) {
         tx.executeWithoutResult(status -> {
             repo.updateAfterSend(
-                    id,
+                    t.notificationId(),
                     NotificationStatus.SENT,
                     null,
                     LocalDateTime.now(),
-                    LocalDateTime.now(),
-                    0 // keep as-is? see note below
+                    null, // no retry needed after success
+                    t.attempts(),
+                    null  // clear processing marker
             );
         });
     }
@@ -98,7 +111,7 @@ public class NotificationProcessor {
     /**
      * Tx #2: mark FAILED, increment attempts and schedule retry.
      */
-    private void markFailed(java.util.UUID id, Exception ex) {
+    private void markFailed(UUID id, Exception ex) {
         tx.executeWithoutResult(status -> {
             Notification n = repo.findById(id).orElse(null);
             if (n == null) return;
@@ -108,6 +121,8 @@ public class NotificationProcessor {
             n.setAttempts(attempts);
             n.setStatus(NotificationStatus.FAILED);
             n.setLastError(NotificationRetryPolicy.trim(ex.getMessage(), 500));
+            // Clear processing mark so it can be claimed again later
+            n.setProcessingStartedAt(null);
             n.setNextAttemptAt(LocalDateTime.now().plusSeconds(NotificationRetryPolicy.backoffSeconds(attempts)));
         });
     }
