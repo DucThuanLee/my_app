@@ -16,6 +16,7 @@ public class RestaurantBackendApplication {
         System.out.println("debugConfig=" + debugConfig);
     }
     public static void main(String[] args) {
+        System.out.println("thuan Starting RestaurantBackendApplication " + Thread.currentThread().getName());
         SpringApplication.run(RestaurantBackendApplication.class, args);
     }
 

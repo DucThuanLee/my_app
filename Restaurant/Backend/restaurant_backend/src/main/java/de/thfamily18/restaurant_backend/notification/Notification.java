@@ -72,6 +72,10 @@ public class Notification {
     private LocalDateTime processingStartedAt;
 
 
+    @Column(name = "dead_lettered_at")
+    private LocalDateTime deadLetteredAt;
+
+
     @PrePersist
     void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();

@@ -4,6 +4,6 @@ public enum NotificationStatus {
     PENDING,
     SENDING,
     SENT,
-    FAILED
-
+    FAILED,
+    DEAD // Dead-letter (no more retries)
 }

@@ -32,6 +32,9 @@ logging:
     #org.flywaydb: DEBUG
     org.springframework.boot.autoconfigure.flyway: DEBUG
     #org.springframework.boot.autoconfigure: DEBUG
+    de.thfamily18.restaurant_backend.notification: DEBUG
+    de.thfamily18.restaurant_backend.payment: DEBUG
+    de.thfamily18.restaurant_backend: INFO
 
 app:
   jwt:

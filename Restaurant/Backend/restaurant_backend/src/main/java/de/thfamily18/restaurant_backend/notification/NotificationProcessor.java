@@ -30,10 +30,11 @@ public class NotificationProcessor {
 
     /**
      * Poll due notifications and process them.
-     * The email sending is intentionally OUTSIDE transaction.
+     * The email sending is intentionally OUTSIDE transaction. 5s
      */
     @Scheduled(fixedDelay = 5000)
     public void processDue() {
+        log.debug("Processing Due {}", Thread.currentThread().getName());
         List<SendTask> tasks = claimBatch();
         if (tasks.isEmpty()) return;
 
@@ -43,7 +44,7 @@ public class NotificationProcessor {
                 emailSender.send(t.recipient(), subjectOf(t), bodyOf(t));
 
                 // 2) Tx #2: mark SENT
-                markSent(t);
+                markSent(t.notificationId);
 
             } catch (Exception ex) {
                 log.error("Send notification failed id={} type={} to={}",
@@ -88,28 +89,33 @@ public class NotificationProcessor {
     }
 
     /**
-     * Tx #2: mark SENT.
-     *
-     * We keep `attempts` as-is (taken from the claimed task),
-     * clear `processingStartedAt`, and set `nextAttemptAt` to NULL because
-     * a successfully sent notification should not be retried.
+     * Tx #2: mark notification as SENT.
+     * No retry-related fields are modified.
+     * markSent Hot path, runs frequently → use update JPQL
+     * markFailed Less frequent, requires logic → entity OK
      */
-    private void markSent(SendTask t) {
+    private void markSent(UUID id) {
         tx.executeWithoutResult(status -> {
+            Notification n = repo.findById(id).orElse(null);
+            if (n == null) return;
+
             repo.updateAfterSend(
-                    t.notificationId(),
+                    id,
                     NotificationStatus.SENT,
-                    null,
-                    LocalDateTime.now(),
-                    null, // no retry needed after success
-                    t.attempts(),
-                    null  // clear processing marker
+                    null,                    // lastError
+                    LocalDateTime.now(),     // sentAt
+                    n.getNextAttemptAt(),    // keep as-is
+                    n.getAttempts(),         // keep as-is
+                    null                     // processingStartedAt cleared
             );
         });
     }
 
     /**
      * Tx #2: mark FAILED, increment attempts and schedule retry.
+     *  Dirty-check is used here, so there is no need for a separate update query because:
+     * 	• FAILED is a path error.
+     * 	• There is no need to optimise the write path.
      */
     private void markFailed(UUID id, Exception ex) {
         tx.executeWithoutResult(status -> {
@@ -124,6 +130,7 @@ public class NotificationProcessor {
             // Clear processing mark so it can be claimed again later
             n.setProcessingStartedAt(null);
             n.setNextAttemptAt(LocalDateTime.now().plusSeconds(NotificationRetryPolicy.backoffSeconds(attempts)));
+            // entity-based, // no need repo.save(n) if entity is managed; dirty-check will flush on commit
         });
     }
 
