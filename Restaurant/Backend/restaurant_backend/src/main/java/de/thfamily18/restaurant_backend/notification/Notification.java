@@ -74,6 +74,8 @@ public class Notification {
 
     @Column(name = "dead_lettered_at")
     private LocalDateTime deadLetteredAt;
+    @Column(name = "dead_letter_reason", length = 500)
+    private String deadLetterReason;
 
 
     @PrePersist

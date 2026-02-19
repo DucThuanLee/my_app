@@ -1,12 +1,18 @@
 package de.thfamily18.restaurant_backend.notification;
 
 import de.thfamily18.restaurant_backend.notification.mail.EmailSender;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,31 +33,61 @@ public class NotificationProcessor {
     private final TransactionTemplate tx;
     private final EmailSender emailSender;
 
+    // For deterministic tests and consistent timestamps
+    private final Clock clock;
+
+    // Dead-letter: after this many failed attempts, stop retrying
+    @Value("${notification.maxAttempts:10}")
+    private int maxAttempts;
+
+    // Micrometer
+    private final MeterRegistry meterRegistry;
+
+    private Counter sentCounter;
+    private Counter failedCounter;
+    private Counter deadCounter;
+    private Timer sendTimer;
+
+    @PostConstruct
+    void initMetrics() {
+        this.sentCounter = meterRegistry.counter("notifications.sent");
+        this.failedCounter = meterRegistry.counter("notifications.failed");
+        this.deadCounter = meterRegistry.counter("notifications.dead");
+        this.sendTimer = meterRegistry.timer("notifications.send.time");
+    }
+
+    private LocalDateTime now() {
+        return LocalDateTime.now(clock);
+    }
 
     /**
      * Poll due notifications and process them.
-     * The email sending is intentionally OUTSIDE transaction. 5s
+     * The email sending is intentionally OUTSIDE transaction.
      */
     @Scheduled(fixedDelay = 5000)
     public void processDue() {
-        log.debug("Processing Due {}", Thread.currentThread().getName());
         List<SendTask> tasks = claimBatch();
         if (tasks.isEmpty()) return;
 
         for (SendTask t : tasks) {
+            Timer.Sample sample = Timer.start(meterRegistry);
+
             try {
-                // 1) Outside transaction: do the external side effect
+                // 1) Outside transaction: external side effect
                 emailSender.send(t.recipient(), subjectOf(t), bodyOf(t));
 
                 // 2) Tx #2: mark SENT
-                markSent(t.notificationId);
+                markSent(t.notificationId());
 
+                sentCounter.increment();
             } catch (Exception ex) {
                 log.error("Send notification failed id={} type={} to={}",
                         t.notificationId(), t.type(), t.recipient(), ex);
 
-                // Tx #2: mark FAILED + backoff
+                // Tx #2: mark FAILED or DEAD + backoff
                 markFailed(t.notificationId(), ex);
+            } finally {
+                sample.stop(sendTimer);
             }
         }
     }
@@ -60,19 +96,18 @@ public class NotificationProcessor {
      * Tx #1: lock a batch and mark them as SENDING (PROCESSING).
      */
     private List<SendTask> claimBatch() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = now();
         LocalDateTime sendingTimeout = now.minusMinutes(SENDING_TIMEOUT_MINUTES);
+
         return tx.execute(status -> {
             List<Notification> locked = repo.lockNextReady(now, sendingTimeout, BATCH_SIZE);
             if (locked.isEmpty()) return List.of();
 
             List<SendTask> out = new ArrayList<>(locked.size());
             for (Notification n : locked) {
-                n.setStatus(NotificationStatus.SENDING); // "PROCESSING"
-                n.setProcessingStartedAt(LocalDateTime.now());
+                n.setStatus(NotificationStatus.SENDING);
+                n.setProcessingStartedAt(now());
                 n.setLastError(null);
-                // Optional: increment attempts when actually trying (some teams do it here)
-                // n.setAttempts(n.getAttempts() + 1);
 
                 out.add(new SendTask(
                         n.getId(),
@@ -83,18 +118,15 @@ public class NotificationProcessor {
                         n.getAttempts()
                 ));
             }
-            // JPA dirty-check will flush on commit
             return out;
         });
     }
 
     /**
-     * Tx #2: mark notification as SENT.
-     * No retry-related fields are modified.
-     * markSent Hot path, runs frequently → use update JPQL
-     * markFailed Less frequent, requires logic → entity OK
+     * Tx #2: mark SENT.
+     * Keep attempts/nextAttemptAt as-is. Clear processingStartedAt.
      */
-    private void markSent(UUID id) {
+    void markSent(UUID id) {
         tx.executeWithoutResult(status -> {
             Notification n = repo.findById(id).orElse(null);
             if (n == null) return;
@@ -102,35 +134,46 @@ public class NotificationProcessor {
             repo.updateAfterSend(
                     id,
                     NotificationStatus.SENT,
-                    null,                    // lastError
-                    LocalDateTime.now(),     // sentAt
-                    n.getNextAttemptAt(),    // keep as-is
-                    n.getAttempts(),         // keep as-is
-                    null                     // processingStartedAt cleared
+                    null,               // lastError
+                    now(),              // sentAt
+                    n.getNextAttemptAt(),// keep as-is
+                    n.getAttempts(),     // keep as-is
+                    null                 // clear processingStartedAt
             );
         });
     }
 
     /**
-     * Tx #2: mark FAILED, increment attempts and schedule retry.
-     *  Dirty-check is used here, so there is no need for a separate update query because:
-     * 	• FAILED is a path error.
-     * 	• There is no need to optimise the write path.
+     * Tx #2: mark FAILED, increment attempts, schedule retry.
+     * If attempts >= maxAttempts -> DEAD (dead-letter).
      */
-    private void markFailed(UUID id, Exception ex) {
+    void markFailed(UUID id, Exception ex) {
         tx.executeWithoutResult(status -> {
             Notification n = repo.findById(id).orElse(null);
             if (n == null) return;
 
             int attempts = n.getAttempts() + 1;
+            String err = NotificationRetryPolicy.trim(ex.getMessage(), 500);
+
+            if (attempts >= maxAttempts) {
+                n.setAttempts(attempts);
+                n.setStatus(NotificationStatus.DEAD);
+                n.setLastError(err);
+                n.setProcessingStartedAt(null);
+                n.setNextAttemptAt(null);     // no more retries
+                n.setDeadLetteredAt(now());
+
+                deadCounter.increment();
+                return;
+            }
 
             n.setAttempts(attempts);
             n.setStatus(NotificationStatus.FAILED);
-            n.setLastError(NotificationRetryPolicy.trim(ex.getMessage(), 500));
-            // Clear processing mark so it can be claimed again later
+            n.setLastError(err);
             n.setProcessingStartedAt(null);
-            n.setNextAttemptAt(LocalDateTime.now().plusSeconds(NotificationRetryPolicy.backoffSeconds(attempts)));
-            // entity-based, // no need repo.save(n) if entity is managed; dirty-check will flush on commit
+            n.setNextAttemptAt(now().plusSeconds(NotificationRetryPolicy.backoffSeconds(attempts)));
+
+            failedCounter.increment();
         });
     }
 
@@ -146,19 +189,15 @@ public class NotificationProcessor {
     private String bodyOf(SendTask t) {
         return "Notification type: " + t.type()
                 + "\nOrderId: " + t.orderId()
-                + "\nTime: " + LocalDateTime.now()
+                + "\nTime: " + now()
                 + (t.payload() != null ? "\nPayload: " + t.payload() : "");
     }
 
-    /**
-     * Minimal data needed outside transaction.
-     * Never pass entity objects outside tx.
-     */
     public record SendTask(
-            java.util.UUID notificationId,
+            UUID notificationId,
             String recipient,
             NotificationType type,
-            java.util.UUID orderId,
+            UUID orderId,
             String payload,
             int attempts
     ) {}

@@ -35,6 +35,7 @@ logging:
     de.thfamily18.restaurant_backend.notification: DEBUG
     de.thfamily18.restaurant_backend.payment: DEBUG
     de.thfamily18.restaurant_backend: INFO
+    org.springframework.security: DEBUG
 
 app:
   jwt:
@@ -55,6 +56,11 @@ app:
     from: ${EMAIL_FROM}
     region: "eu-central-1"
 
+#  ratelimit:
+#    publicCapacity: 10
+#    publicRefillTokens: 10
+#    publicRefillSeconds: 60
+
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -64,3 +70,18 @@ springdoc:
 stripe:
   secretKey: ${STRIPE_SECRET_KEY}          # sk_test_...
   webhookSecret: ${STRIPE_WEBHOOK_SECRET}  # whsec_... (Stripe CLI listen or dashboard)
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+
