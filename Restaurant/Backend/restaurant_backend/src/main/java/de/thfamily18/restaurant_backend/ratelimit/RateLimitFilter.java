@@ -4,6 +4,11 @@ import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.Refill;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +29,27 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final RateLimitProperties props;
+    private final MeterRegistry meterRegistry;
+
+    // Metrics (initialized once)
+    private Counter allowedCounter;
+    private Counter blockedCounter;
+    private Counter errorCounter;
+    private Timer filterTimer;
+
+    @PostConstruct
+    void initMetrics() {
+        this.allowedCounter = meterRegistry.counter("ratelimit.allowed");
+        this.blockedCounter = meterRegistry.counter("ratelimit.blocked");
+        this.errorCounter = meterRegistry.counter("ratelimit.errors");
+        this.filterTimer = meterRegistry.timer("ratelimit.filter.time");
+
+        // Dev-only visibility: how many in-memory buckets currently exist
+        Gauge.builder("ratelimit.buckets", buckets, ConcurrentHashMap::size)
+                .description("Number of in-memory token buckets (dev only)")
+                .register(meterRegistry);
+    }
+
 
     // In-memory buckets (dev only). Key = user/ip + route-group
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
@@ -32,36 +58,44 @@ public class RateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String path = request.getRequestURI();
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            String path = request.getRequestURI();
 
-        // Skip actuator (optional)
-        if (path.startsWith("/actuator")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+            // Skip actuator (optional)
+            if (path.startsWith("/actuator")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-        String key = resolveKey(request, path);
+            String key = resolveKey(request, path);
 
-        Bucket bucket = buckets.computeIfAbsent(key, k -> Bucket.builder()
-                .addLimit(limitFor(path))
-                .build());
+            Bucket bucket = buckets.computeIfAbsent(key, k -> Bucket.builder()
+                    .addLimit(limitFor(path))
+                    .build());
 
-        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+            ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+            // Useful headers for debugging/testing
+            response.setHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
 
-        response.setHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
-
-        if (!probe.isConsumed()) {
-            long waitSeconds = Math.max(1, probe.getNanosToWaitForRefill() / 1_000_000_000L);
-            response.setHeader("Retry-After", String.valueOf(waitSeconds));
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.setContentType("application/json");
-            response.getWriter().write("""
+            if (!probe.isConsumed()) {
+                blockedCounter.increment();
+                long waitSeconds = Math.max(1, probe.getNanosToWaitForRefill() / 1_000_000_000L);
+                response.setHeader("Retry-After", String.valueOf(waitSeconds));
+                response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+                response.setContentType("application/json");
+                response.getWriter().write("""
                 {"status":429,"error":"TOO_MANY_REQUESTS","message":"Rate limit exceeded"}
                 """);
-            return;
+                return;
+            }
+            allowedCounter.increment();
+            filterChain.doFilter(request, response);
+        } catch (Exception ex) {
+            throw ex;
+        } finally {
+            sample.stop(filterTimer);
         }
-
-        filterChain.doFilter(request, response);
     }
 
     private Bandwidth limitFor(String path) {
