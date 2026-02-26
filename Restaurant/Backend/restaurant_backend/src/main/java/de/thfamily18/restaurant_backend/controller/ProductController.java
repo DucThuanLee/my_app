@@ -35,4 +35,10 @@ public class ProductController {
         return service.getBestSellers(lang, category);
     }
 
+    @Operation(summary = "Get categories")
+    @GetMapping("/categories")
+    public List<String> categories() {
+        return service.getCategories();
+    }
+
 }

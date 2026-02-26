@@ -67,6 +67,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
                 return;
             }
+            // Skip swagger (optional)
+            if (path.startsWith("/swagger")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
             String key = resolveKey(request, path);
 

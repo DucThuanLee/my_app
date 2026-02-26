@@ -17,11 +17,11 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ProductService {
 
     private final ProductRepository repo;
 
+    @Transactional(readOnly = true)
     public List<ProductResponse> getProducts(String lang, String category) {
         List<Product> products = (category == null || category.isBlank())
                 ? repo.findAll()
@@ -32,6 +32,7 @@ public class ProductService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ProductResponse> getBestSellers(String lang, String category) {
         List<Product> products = (category == null || category.isBlank())
                 ? repo.findByBestSellerTrue()
@@ -43,12 +44,14 @@ public class ProductService {
     }
 
 
+    @Transactional
     public ProductResponse create(ProductUpsertRequest req) {
         Product p = mapToEntity(req);
         Product saved = repo.save(p);
         return toResponse(saved, "de"); // admin response default de
     }
 
+    @Transactional
     public ProductResponse update(UUID id, ProductUpsertRequest req) {
         Product p = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
@@ -57,6 +60,7 @@ public class ProductService {
         return toResponse(saved, "de"); // admin response default de
     }
 
+    @Transactional
     public void delete(UUID id) {
         if (!repo.existsById(id)) throw new ResourceNotFoundException("Product not found");
         repo.deleteById(id);
@@ -71,6 +75,11 @@ public class ProductService {
         return repo.saveAll(products).stream()
                 .map(p -> toResponse(p, "de")) // admin response default de
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getCategories() {
+        return repo.findDistinctCategories();
     }
 
     // ===== helpers =====
