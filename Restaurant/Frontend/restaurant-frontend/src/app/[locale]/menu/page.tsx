@@ -1,52 +1,25 @@
 import Link from "next/link";
 import {getTranslations} from "next-intl/server";
-import {Product} from "../../../types/product";
-
-type CategoryKey = "milk_tea" | "fruit_tea" |"coffee" | "chicken";
-
-function normalizeCategory(input?: string): CategoryKey | undefined {
-  const value = (input ?? "").toLowerCase().trim();
-  if (value === "milk_tea" || value == "fruit_tea" || value === "coffee" || value === "chicken") {
-    return value;
-  }
-  return undefined;
-}
+import {formatPriceEUR, getCategories, getProducts} from "@/lib/api";
+import type {Category, Product} from "@/types/product";
 
 /**
- * Fetch products from Java backend.
- * Backend already returns localized name/description.
+ * Validate that the category from URL exists in the server-driven category list.
  */
-async function fetchProducts(category?: CategoryKey): Promise<Product[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_API_URL is not defined");
-  }
+function validateCategory(input: string | undefined, categories: Category[]): Category | undefined {
+  const value = (input ?? "").trim();
+  if (!value) return undefined;
 
-  const url = new URL("/api/products", baseUrl);
-  if (category) {
-    url.searchParams.set("category", category);
-  }
-
-  const res = await fetch(url.toString(), {cache: "no-store"});
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch products: ${res.status}`);
-  }
-
-  return res.json();
-}
-
-function formatPriceEUR(price: number) {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR"
-  }).format(price);
+  // Case-insensitive match against server list
+  const found = categories.find((c) => c.toLowerCase() === value.toLowerCase());
+  return found;
 }
 
 /**
  * Menu page (Server Component).
- * - Category filter via query string
- * - Product name/description come directly from backend
+ * - Category list is fetched from server
+ * - Category filter is validated against that list
+ * - Products are fetched from server (no local data)
  */
 export default async function MenuPage({
   params,
@@ -60,11 +33,17 @@ export default async function MenuPage({
 
   const t = await getTranslations("menu");
 
-  const category = normalizeCategory(sp.category);
+  // Fetch server-driven categories
+  const categories = await getCategories();
+
+  // Validate category from query param against server list
+  const category = validateCategory(sp.category, categories);
+
+  // Fetch products (server)
+  const products: Product[] = await getProducts({category});
+
+  // Server-side search (simple, no client state needed)
   const query = (sp.q ?? "").toLowerCase().trim();
-
-  const products = await fetchProducts(category);
-
   const filtered = query
     ? products.filter(
         (p) =>
@@ -73,12 +52,21 @@ export default async function MenuPage({
       )
     : products;
 
-  const tabs = [
-    {label: t("tabAll"), href: `/${locale}/menu`},
-    {label: t("tabBubbleTea"), href: `/${locale}/menu?category=milk_tea`},
-    {label: t("tabBubbleTea"), href: `/${locale}/menu?category=fruit_tea`},
-    {label: t("tabCoffee"), href: `/${locale}/menu?category=coffee`},
-    {label: t("tabChicken"), href: `/${locale}/menu?category=chicken`}
+  // Build tabs dynamically from server categories
+  const tabs: Array<{label: string; href: string; active: boolean}> = [
+    {
+      label: t("tabAll"),
+      href: `/${locale}/menu`,
+      active: !category
+    },
+    ...categories.map((c) => ({
+      // Label strategy:
+      // - If you want localized labels, use messages keys like menu.categoryLabels.<category>
+      // - For now, display the category string as-is.
+      label: c,
+      href: `/${locale}/menu?category=${encodeURIComponent(c)}`,
+      active: !!category && c.toLowerCase() === category.toLowerCase()
+    }))
   ];
 
   return (
@@ -87,9 +75,7 @@ export default async function MenuPage({
       <section className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900">
-              {t("title")}
-            </h1>
+            <h1 className="text-3xl font-extrabold text-gray-900">{t("title")}</h1>
             <p className="mt-1 text-gray-600">{t("subtitle")}</p>
           </div>
 
@@ -101,17 +87,16 @@ export default async function MenuPage({
           </Link>
         </div>
 
-        {/* ================= CATEGORY TABS ================= */}
+        {/* ================= TABS (SERVER-DRIVEN) ================= */}
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                tab.href.includes(category ?? "")
-                  ? "bg-blue-600 text-white"
-                  : "border bg-white text-blue-700 hover:bg-blue-50"
-              }`}
+              className={[
+                "rounded-full px-4 py-2 text-sm font-semibold",
+                tab.active ? "bg-blue-600 text-white" : "border bg-white text-blue-700 hover:bg-blue-50"
+              ].join(" ")}
             >
               {tab.label}
             </Link>
@@ -120,13 +105,16 @@ export default async function MenuPage({
 
         {/* ================= SEARCH ================= */}
         <form action={`/${locale}/menu`} className="flex gap-3">
-          {category && <input type="hidden" name="category" value={category} />}
+          {/* Keep category when searching */}
+          {category ? <input type="hidden" name="category" value={category} /> : null}
+
           <input
             name="q"
             defaultValue={sp.q ?? ""}
             placeholder={t("searchPlaceholder")}
             className="flex-1 rounded-2xl border px-4 py-3 text-sm outline-none ring-blue-200 focus:ring-4"
           />
+
           <button
             type="submit"
             className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
@@ -139,27 +127,17 @@ export default async function MenuPage({
       {/* ================= PRODUCTS GRID ================= */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((p) => (
-          <article
-            key={p.id}
-            className="rounded-3xl border bg-white p-6 shadow-sm"
-          >
-            {/* Category icon */}
+          <article key={p.id} className="rounded-3xl border bg-white p-6 shadow-sm">
             <div className="mb-4 flex h-32 items-center justify-center rounded-2xl bg-blue-50 text-3xl">
-              {p.category === "bubbletea" && "🧋"}
-              {p.category === "coffee" && "☕"}
-              {p.category === "chicken" && "🍗"}
+              🧋
             </div>
 
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {p.name}
-                </h3>
-                {p.description && (
-                  <p className="mt-2 text-sm text-gray-600">
-                    {p.description}
-                  </p>
-                )}
+                <h3 className="text-lg font-semibold text-gray-900">{p.name}</h3>
+                {p.description ? (
+                  <p className="mt-2 text-sm text-gray-600">{p.description}</p>
+                ) : null}
               </div>
 
               <div className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
@@ -167,11 +145,11 @@ export default async function MenuPage({
               </div>
             </div>
 
-            {p.bestSeller && (
+            {p.bestSeller ? (
               <div className="mt-3 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                 {t("bestSeller")}
               </div>
-            )}
+            ) : null}
 
             <div className="mt-5 flex gap-3">
               <button
@@ -188,25 +166,27 @@ export default async function MenuPage({
                 {t("details")}
               </button>
             </div>
+
+            <div className="mt-4 text-xs font-semibold text-gray-500">
+              {t("category")}: <span className="text-blue-700">{p.category}</span>
+            </div>
           </article>
         ))}
       </section>
 
       {/* ================= EMPTY STATE ================= */}
-      {filtered.length === 0 && (
+      {filtered.length === 0 ? (
         <section className="rounded-3xl border bg-white p-10 text-center">
-          <h2 className="text-xl font-extrabold text-gray-900">
-            {t("emptyTitle")}
-          </h2>
+          <h2 className="text-xl font-extrabold text-gray-900">{t("emptyTitle")}</h2>
           <p className="mt-2 text-gray-600">{t("emptySubtitle")}</p>
           <Link
             href={`/${locale}/menu`}
             className="mt-6 inline-flex rounded-2xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
           >
-            {t("reset")}
+            {t("reset")} →
           </Link>
         </section>
-      )}
+      ) : null}
     </main>
   );
 }
