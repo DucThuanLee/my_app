@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,6 +30,20 @@ public class GlobalExceptionHandler {
         return build(ErrorCode.NOT_FOUND, req, locale, null);
     }
 
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ApiError> handleDuplicate(DuplicateResourceException ex, HttpServletRequest req) {
+        log.warn("DUPLICATE: {}", ex.getMessage());
+        ApiError err = new ApiError(
+                HttpStatus.CONFLICT.value(),
+                "DUPLICATE",
+                ex.getMessage(),
+                req.getRequestURI(),
+                LocalDateTime.now(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(err);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req, Locale locale) {
         Map<String, String> fields = new LinkedHashMap<>();
@@ -50,15 +65,25 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<?> handleBusinessException(BusinessException ex, HttpServletRequest req, Locale locale) {
+    public ResponseEntity<ApiError> handleBusinessException(BusinessException ex, HttpServletRequest req, Locale locale) {
         ErrorCode code = ex.getErrorCode();
+        log.warn("BUSINESS_ERROR: {} code={}", ex.getMessage(), code);
         return build(code, req, locale, null);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiError> handleBadRequest(IllegalArgumentException ex,
                                                      HttpServletRequest req, Locale locale) {
-        return build(ErrorCode.VALIDATION_ERROR, req, locale, null); // or create your own code
+        log.warn("BAD_REQUEST: {}", ex.getMessage());
+        ApiError err = new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "BAD_REQUEST",
+                ex.getMessage(),
+                req.getRequestURI(),
+                LocalDateTime.now(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
     }
 
     @ExceptionHandler(Exception.class)
