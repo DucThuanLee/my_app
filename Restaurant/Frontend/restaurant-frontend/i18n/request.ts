@@ -1,26 +1,27 @@
 import {getRequestConfig} from "next-intl/server";
 import {notFound} from "next/navigation";
 
-/**
- * Normalizes locales like "de-DE" -> "de".
- * Also handles undefined/empty locale safely.
- */
+const locales = ["de", "en"] as const;
+const defaultLocale = "de";
+
 function normalizeLocale(locale?: string) {
   const value = (locale ?? "").trim();
-  if (!value) return "de";
+  if (!value) return defaultLocale;
   return value.split("-")[0];
 }
 
-export default getRequestConfig(async ({locale}) => {
-  const normalized = normalizeLocale(locale);
+export default getRequestConfig(async ({requestLocale}) => {
+  const requested = await requestLocale;
+  const locale = normalizeLocale(requested);
 
-  // Only allow the locales we support
-  if (normalized !== "de" && normalized !== "en") notFound();
+  if (!locales.includes(locale as (typeof locales)[number])) {
+    notFound();
+  }
 
   return {
-    locale: normalized,
+    locale,
     messages:
-      normalized === "de"
+      locale === "de"
         ? (await import("../messages/de.json")).default
         : (await import("../messages/en.json")).default
   };

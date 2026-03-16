@@ -1,22 +1,12 @@
 import createMiddleware from "next-intl/middleware";
 
 export default createMiddleware({
- // A list of all locales that are supported
- locales: ['de', 'en'],
-  
- // Default locale (German for Germany)
- defaultLocale: 'de',
- 
- // Automatically detect locale from browser
- localeDetection: true
+  locales: ["de", "en"],
+  defaultLocale: "de"
 });
 
 export const config = {
-  // Match all pathnames except for
-  // - /api (API routes)
-  // - /_next (Next.js internals)
-  // - Static files (images, favicon, etc.)
-  matcher: ["/((?!api|_next|.*\\..*).*)"]
+  matcher: "/((?!api|trpc|_next|_vercel|.*\\..*).*)"
 };
 
 // import createMiddleware from "next-intl/middleware";

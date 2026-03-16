@@ -2,6 +2,7 @@ import Link from "next/link";
 import {getTranslations} from "next-intl/server";
 import {formatPriceEUR, getCategories, getProducts} from "@/lib/api";
 import type {Category, Product} from "@/types/product";
+import AddToCartButton from "@/components/AddToCartButton";
 
 /**
  * Validate that the category from URL exists in the server-driven category list.
@@ -10,16 +11,29 @@ function validateCategory(input: string | undefined, categories: Category[]): Ca
   const value = (input ?? "").trim();
   if (!value) return undefined;
 
-  // Case-insensitive match against server list
   const found = categories.find((c) => c.toLowerCase() === value.toLowerCase());
   return found;
 }
 
 /**
+ * Pick a visual emoji for category cards/items.
+ */
+function categoryEmoji(category: string) {
+  const key = category.toLowerCase();
+
+  if (key.includes("bubble")) return "🧋";
+  if (key.includes("coffee")) return "☕";
+  if (key.includes("chicken") || key.includes("hähn") || key.includes("hahn")) return "🍗";
+
+  return "🍽️";
+}
+
+/**
  * Menu page (Server Component).
- * - Category list is fetched from server
- * - Category filter is validated against that list
- * - Products are fetched from server (no local data)
+ * - Categories come from server
+ * - Products come from server
+ * - Search/filter is handled server-side
+ * - Shared header/footer are rendered in [locale]/layout.tsx
  */
 export default async function MenuPage({
   params,
@@ -33,16 +47,11 @@ export default async function MenuPage({
 
   const t = await getTranslations("menu");
 
-  // Fetch server-driven categories
   const categories = await getCategories();
-
-  // Validate category from query param against server list
   const category = validateCategory(sp.category, categories);
 
-  // Fetch products (server)
   const products: Product[] = await getProducts({category});
 
-  // Server-side search (simple, no client state needed)
   const query = (sp.q ?? "").toLowerCase().trim();
   const filtered = query
     ? products.filter(
@@ -52,7 +61,6 @@ export default async function MenuPage({
       )
     : products;
 
-  // Build tabs dynamically from server categories
   const tabs: Array<{label: string; href: string; active: boolean}> = [
     {
       label: t("tabAll"),
@@ -60,9 +68,6 @@ export default async function MenuPage({
       active: !category
     },
     ...categories.map((c) => ({
-      // Label strategy:
-      // - If you want localized labels, use messages keys like menu.categoryLabels.<category>
-      // - For now, display the category string as-is.
       label: c,
       href: `/${locale}/menu?category=${encodeURIComponent(c)}`,
       active: !!category && c.toLowerCase() === category.toLowerCase()
@@ -71,7 +76,7 @@ export default async function MenuPage({
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 pb-24 pt-8">
-      {/* ================= HEADER ================= */}
+      {/* ================= PAGE HEADER ================= */}
       <section className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -80,14 +85,14 @@ export default async function MenuPage({
           </div>
 
           <Link
-            href={`/${locale}/checkout`}
+            href={`/${locale}/cart`}
             className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
           >
-            {t("goToCheckout")} →
+            {t("goToCart")} →
           </Link>
         </div>
 
-        {/* ================= TABS (SERVER-DRIVEN) ================= */}
+        {/* ================= CATEGORY TABS ================= */}
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
             <Link
@@ -95,7 +100,9 @@ export default async function MenuPage({
               href={tab.href}
               className={[
                 "rounded-full px-4 py-2 text-sm font-semibold",
-                tab.active ? "bg-blue-600 text-white" : "border bg-white text-blue-700 hover:bg-blue-50"
+                tab.active
+                  ? "bg-blue-600 text-white"
+                  : "border bg-white text-blue-700 hover:bg-blue-50"
               ].join(" ")}
             >
               {tab.label}
@@ -105,14 +112,13 @@ export default async function MenuPage({
 
         {/* ================= SEARCH ================= */}
         <form action={`/${locale}/menu`} className="flex gap-3">
-          {/* Keep category when searching */}
           {category ? <input type="hidden" name="category" value={category} /> : null}
 
           <input
             name="q"
             defaultValue={sp.q ?? ""}
             placeholder={t("searchPlaceholder")}
-            className="flex-1 rounded-2xl border px-4 py-3 text-sm outline-none ring-blue-200 focus:ring-4"
+            className="flex-1 rounded-2xl border bg-white px-4 py-3 text-sm outline-none ring-blue-200 focus:ring-4"
           />
 
           <button
@@ -124,17 +130,30 @@ export default async function MenuPage({
         </form>
       </section>
 
+      {/* ================= RESULTS SUMMARY ================= */}
+      <section className="flex items-center justify-between">
+        <div className="text-sm text-gray-600">{t("results", {count: filtered.length})}</div>
+
+        <Link
+          href={`/${locale}`}
+          className="text-sm font-semibold text-blue-700 hover:underline"
+        >
+          ← {t("backHome")}
+        </Link>
+      </section>
+
       {/* ================= PRODUCTS GRID ================= */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((p) => (
           <article key={p.id} className="rounded-3xl border bg-white p-6 shadow-sm">
             <div className="mb-4 flex h-32 items-center justify-center rounded-2xl bg-blue-50 text-3xl">
-              🧋
+              {categoryEmoji(p.category)}
             </div>
 
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{p.name}</h3>
+
                 {p.description ? (
                   <p className="mt-2 text-sm text-gray-600">{p.description}</p>
                 ) : null}
@@ -152,12 +171,7 @@ export default async function MenuPage({
             ) : null}
 
             <div className="mt-5 flex gap-3">
-              <button
-                type="button"
-                className="flex-1 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                {t("addToCart")}
-              </button>
+              <AddToCartButton product={p} label={t("addToCart")} />
 
               <button
                 type="button"
@@ -179,14 +193,27 @@ export default async function MenuPage({
         <section className="rounded-3xl border bg-white p-10 text-center">
           <h2 className="text-xl font-extrabold text-gray-900">{t("emptyTitle")}</h2>
           <p className="mt-2 text-gray-600">{t("emptySubtitle")}</p>
+
           <Link
             href={`/${locale}/menu`}
             className="mt-6 inline-flex rounded-2xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
           >
-            {t("reset")} →
+            {t("reset")}
           </Link>
         </section>
       ) : null}
+
+      {/* ================= MOBILE STICKY CTA ================= */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-white/90 p-3 backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4">
+          <Link
+            href={`/${locale}/cart`}
+            className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            {t("goToCart")}
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }

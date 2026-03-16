@@ -2,24 +2,27 @@ import Link from "next/link";
 import {getTranslations} from "next-intl/server";
 import {formatPriceEUR, getBestSellers, getCategories} from "@/lib/api";
 import type {Category, Product} from "@/types/product";
+import AddToCartButton from "@/components/AddToCartButton";
 
 /**
  * Pick an emoji for a given category key.
- * This is purely UI and does not affect server-driven categories.
+ * This is only for visual presentation.
  */
 function categoryEmoji(category: string) {
   const key = category.toLowerCase();
+
   if (key.includes("bubble")) return "🧋";
   if (key.includes("coffee")) return "☕";
   if (key.includes("chicken") || key.includes("hähn") || key.includes("hahn")) return "🍗";
+
   return "🍽️";
 }
 
 /**
  * Home page (Server Component).
- * - Categories come from server: GET /api/categories
- * - Best sellers come from server: GET /api/products?bestSeller=true
- * - No local/demo products
+ * - Categories come from server
+ * - Best sellers come from server
+ * - Shared header/footer are rendered in [locale]/layout.tsx
  */
 export default async function HomePage({
   params
@@ -29,286 +32,234 @@ export default async function HomePage({
   const {locale} = await params;
   const t = await getTranslations("home");
 
-  // Server-driven data
   const [categories, bestSellers] = await Promise.all([
     getCategories(),
     getBestSellers()
   ]);
 
-  // "Popular Today" uses first 3 best sellers (server-driven)
   const popularToday: Product[] = bestSellers.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50/60 via-white to-white">
-      {/* ================= STICKY NAVBAR ================= */}
-      <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          {/* Brand */}
-          <Link href={`/${locale}`} className="flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-600 font-extrabold text-white">
-              M
+    <div className="mx-auto max-w-6xl space-y-14 px-4 pb-24 pt-8 md:pb-16">
+      {/* ================= HERO ================= */}
+      <section className="relative overflow-hidden rounded-3xl border bg-white p-8 md:p-12">
+        {/* Decorative gradients */}
+        <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/60 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-sky-200/60 blur-3xl" />
+
+        <div className="relative grid gap-10 md:grid-cols-2 md:items-center">
+          {/* Left: copy */}
+          <div className="space-y-5">
+            <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1 text-sm font-semibold text-blue-700">
+              {t("badge")}
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
+              {t("badge2")}
             </span>
-            <div className="leading-tight">
-              <div className="text-sm font-extrabold text-gray-900">{t("brand")}</div>
-              <div className="text-xs text-gray-500">{t("badge")}</div>
-            </div>
-          </Link>
 
-          {/* Actions */}
-          <nav className="flex items-center gap-2">
-            <Link
-              href={`/${locale}/menu`}
-              className="hidden rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-blue-50 md:inline-flex"
-            >
-              {t("ctaMenu")}
-            </Link>
+            <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 md:text-5xl">
+              {t("heroTitle")}
+              <br />
+              <span className="text-blue-700">{t("heroTitle2")}</span>
+            </h1>
 
-            <Link
-              href={`/${locale}/checkout`}
-              className="hidden rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 md:inline-flex"
-            >
-              {t("ctaOrder")}
-            </Link>
+            <p className="max-w-prose text-lg leading-relaxed text-gray-600">
+              {t("heroSubtitle")}
+            </p>
 
-            <Link
-              href={`/${locale}/checkout`}
-              className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-              aria-label="Go to checkout"
-            >
-              <span>🛒</span>
-              <span className="hidden sm:inline">{t("ctaOrder")}</span>
-            </Link>
-          </nav>
-        </div>
-      </header>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link
+                href={`/${locale}/menu`}
+                className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-blue-700"
+              >
+                {t("ctaMenu")}
+              </Link>
 
-      <main className="mx-auto max-w-6xl space-y-14 px-4 pb-24 pt-8 md:pb-16">
-        {/* ================= HERO ================= */}
-        <section className="relative overflow-hidden rounded-3xl border bg-white p-8 md:p-12">
-          {/* Decorative gradients */}
-          <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/60 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-sky-200/60 blur-3xl" />
-
-          <div className="relative grid gap-10 md:grid-cols-2 md:items-center">
-            {/* Left: copy */}
-            <div className="space-y-5">
-              <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1 text-sm font-semibold text-blue-700">
-                {t("badge")}
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
-                {t("badge2")}
-              </span>
-
-              <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 md:text-5xl">
-                {t("heroTitle")}
-                <br />
-                <span className="text-blue-700">{t("heroTitle2")}</span>
-              </h1>
-
-              <p className="max-w-prose text-lg leading-relaxed text-gray-600">
-                {t("heroSubtitle")}
-              </p>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href={`/${locale}/menu`}
-                  className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-blue-700"
-                >
-                  {t("ctaMenu")}
-                </Link>
-                <Link
-                  href={`/${locale}/checkout`}
-                  className="inline-flex items-center justify-center rounded-2xl border px-6 py-3 font-semibold text-blue-700 hover:bg-blue-50"
-                >
-                  {t("ctaOrder")}
-                </Link>
-              </div>
-
-              <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-                <span className="rounded-full border bg-white px-3 py-1">✓ {t("perkFast")}</span>
-                <span className="rounded-full border bg-white px-3 py-1">✓ {t("perkGuest")}</span>
-                <span className="rounded-full border bg-white px-3 py-1">✓ {t("perkPayment")}</span>
-              </div>
+              <Link
+                href={`/${locale}/cart`}
+                className="inline-flex items-center justify-center rounded-2xl border px-6 py-3 font-semibold text-blue-700 hover:bg-blue-50"
+              >
+                {t("ctaOrder")}
+              </Link>
             </div>
 
-            {/* Right: Popular Today (FROM SERVER) */}
-            <div className="relative">
-              <div className="rounded-3xl border bg-gradient-to-b from-blue-50 to-white p-6 shadow-sm">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-blue-700">{t("popularToday")}</span>
-                    <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
-                      {t("bestSellerTag")}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3">
-                    {popularToday.length > 0 ? (
-                      popularToday.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between rounded-2xl border bg-white p-4"
-                        >
-                          <span className="font-semibold text-gray-900">{item.name}</span>
-                          <span className="font-bold text-blue-700">{formatPriceEUR(item.price)}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-2xl border bg-white p-4 text-sm text-gray-600">
-                        No best sellers yet.
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="rounded-2xl bg-blue-600 p-4 text-white">
-                    <div className="text-sm opacity-90">{t("etaLabel")}</div>
-                    <div className="text-lg font-bold">{t("etaValue")}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pointer-events-none absolute -bottom-8 -right-8 h-28 w-28 rounded-full bg-blue-300/50 blur-2xl" />
+            <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+              <span className="rounded-full border bg-white px-3 py-1">✓ {t("perkFast")}</span>
+              <span className="rounded-full border bg-white px-3 py-1">✓ {t("perkGuest")}</span>
+              <span className="rounded-full border bg-white px-3 py-1">✓ {t("perkPayment")}</span>
             </div>
           </div>
-        </section>
 
-        {/* ================= CATEGORIES (FROM SERVER) ================= */}
-        <section className="space-y-5">
-          <div className="flex items-end justify-between">
-            <div>
-              <h2 className="text-2xl font-extrabold text-gray-900">{t("categories")}</h2>
-              <p className="mt-1 text-gray-600">{t("categoriesSubtitle")}</p>
-            </div>
-
-            <Link
-              href={`/${locale}/menu`}
-              className="hidden rounded-xl border px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 md:inline-flex"
-            >
-              {t("seeAll")} →
-            </Link>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            {(categories as Category[]).map((c) => (
-              <div key={c} className="rounded-3xl border bg-white p-6 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <h3 className="text-lg font-semibold text-blue-700">{c}</h3>
-                  <span className="text-2xl" aria-hidden>
-                    {categoryEmoji(c)}
+          {/* Right: Popular Today */}
+          <div className="relative">
+            <div className="rounded-3xl border bg-gradient-to-b from-blue-50 to-white p-6 shadow-sm">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-blue-700">
+                    {t("popularToday")}
+                  </span>
+                  <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
+                    {t("bestSellerTag")}
                   </span>
                 </div>
 
-                <p className="mt-2 text-gray-600">
-                  {/* If you want localized category descriptions, add i18n keys later */}
-                  {t("categoryCardHint")}
-                </p>
+                <div className="space-y-3">
+                  {popularToday.length > 0 ? (
+                    popularToday.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between rounded-2xl border bg-white p-4"
+                      >
+                        <span className="font-semibold text-gray-900">
+                          {item.name}
+                        </span>
+                        <span className="font-bold text-blue-700">
+                          {formatPriceEUR(item.price)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-2xl border bg-white p-4 text-sm text-gray-600">
+                      No best sellers yet.
+                    </div>
+                  )}
+                </div>
 
-                <Link
-                  href={`/${locale}/menu?category=${encodeURIComponent(c)}`}
-                  className="mt-4 inline-flex items-center gap-2 font-semibold text-blue-700 hover:underline"
-                >
-                  {t("explore")} <span aria-hidden>→</span>
-                </Link>
+                <div className="rounded-2xl bg-blue-600 p-4 text-white">
+                  <div className="text-sm opacity-90">{t("etaLabel")}</div>
+                  <div className="text-lg font-bold">{t("etaValue")}</div>
+                </div>
               </div>
-            ))}
-          </div>
-
-          {categories.length === 0 ? (
-            <div className="rounded-3xl border bg-white p-8 text-sm text-gray-600">
-              No categories found.
             </div>
-          ) : null}
+
+            <div className="pointer-events-none absolute -bottom-8 -right-8 h-28 w-28 rounded-full bg-blue-300/50 blur-2xl" />
+          </div>
+        </div>
+      </section>
+
+      {/* ================= CATEGORIES ================= */}
+      <section className="space-y-5">
+        <div className="flex items-end justify-between">
+          <div>
+            <h2 className="text-2xl font-extrabold text-gray-900">
+              {t("categories")}
+            </h2>
+            <p className="mt-1 text-gray-600">{t("categoriesSubtitle")}</p>
+          </div>
 
           <Link
             href={`/${locale}/menu`}
-            className="inline-flex rounded-xl border px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 md:hidden"
+            className="hidden rounded-xl border px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 md:inline-flex"
           >
             {t("seeAll")} →
           </Link>
-        </section>
+        </div>
 
-        {/* ================= BEST SELLERS (FROM SERVER) ================= */}
-        <section className="space-y-5">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-extrabold text-gray-900">{t("bestSellersTitle")}</h2>
-              <p className="mt-1 text-gray-600">{t("bestSellersSubtitle")}</p>
-            </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {(categories as Category[]).map((c) => (
+            <div key={c} className="rounded-3xl border bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between">
+                <h3 className="text-lg font-semibold text-blue-700">{c}</h3>
+                <span className="text-2xl" aria-hidden>
+                  {categoryEmoji(c)}
+                </span>
+              </div>
 
-            <Link
-              href={`/${locale}/menu`}
-              className="hidden rounded-xl border px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 md:inline-flex"
-            >
-              {t("seeAll")} →
-            </Link>
-          </div>
+              <p className="mt-2 text-gray-600">{t("categoryCardHint")}</p>
 
-          <div className="-mx-4 overflow-x-auto px-4 pb-2">
-            <div className="flex min-w-max gap-4">
-              {bestSellers.map((p) => (
-                <div key={p.id} className="w-[300px] rounded-3xl border bg-white p-6 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                        {t("bestSellerTag")}
-                      </div>
-
-                      <h3 className="mt-3 text-lg font-semibold text-gray-900">{p.name}</h3>
-
-                      {p.description ? (
-                        <p className="mt-2 text-sm text-gray-600">{p.description}</p>
-                      ) : null}
-                    </div>
-
-                    <div className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
-                      {formatPriceEUR(p.price)}
-                    </div>
-                  </div>
-
-                  <div className="mt-5 flex gap-3">
-                    <Link
-                      href={`/${locale}/menu?category=${encodeURIComponent(p.category)}`}
-                      className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                    >
-                      {t("addToCart")}
-                    </Link>
-                    <Link
-                      href={`/${locale}/menu?category=${encodeURIComponent(p.category)}`}
-                      className="inline-flex items-center justify-center rounded-2xl border px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-                    >
-                      {t("details")}
-                    </Link>
-                  </div>
-
-                  <div className="mt-4 text-xs font-semibold text-gray-500">
-                    Category: <span className="text-blue-700">{p.category}</span>
-                  </div>
-                </div>
-              ))}
-
-              {bestSellers.length === 0 ? (
-                <div className="w-[300px] rounded-3xl border bg-white p-6 text-sm text-gray-600 shadow-sm">
-                  No best sellers yet.
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-        {/* ================= FOOTER ================= */}
-        <footer className="border-t pt-8 pb-12 text-sm text-gray-600">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <span>© {new Date().getFullYear()} {t("brand")}</span>
-            <div className="flex gap-6">
-              <Link href={`/${locale}/impressum`} className="hover:underline">
-                Impressum
-              </Link>
-              <Link href={`/${locale}/privacy`} className="hover:underline">
-                Privacy / Datenschutz
+              <Link
+                href={`/${locale}/menu?category=${encodeURIComponent(c)}`}
+                className="mt-4 inline-flex items-center gap-2 font-semibold text-blue-700 hover:underline"
+              >
+                {t("explore")} <span aria-hidden>→</span>
               </Link>
             </div>
+          ))}
+        </div>
+
+        {categories.length === 0 ? (
+          <div className="rounded-3xl border bg-white p-8 text-sm text-gray-600">
+            No categories found.
           </div>
-        </footer>
-      </main>
+        ) : null}
+
+        <Link
+          href={`/${locale}/menu`}
+          className="inline-flex rounded-xl border px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 md:hidden"
+        >
+          {t("seeAll")} →
+        </Link>
+      </section>
+
+      {/* ================= BEST SELLERS ================= */}
+      <section className="space-y-5">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-extrabold text-gray-900">
+              {t("bestSellersTitle")}
+            </h2>
+            <p className="mt-1 text-gray-600">{t("bestSellersSubtitle")}</p>
+          </div>
+
+          <Link
+            href={`/${locale}/menu`}
+            className="hidden rounded-xl border px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 md:inline-flex"
+          >
+            {t("seeAll")} →
+          </Link>
+        </div>
+
+        <div className="-mx-4 overflow-x-auto px-4 pb-2">
+          <div className="flex min-w-max gap-4">
+            {bestSellers.map((p) => (
+              <div
+                key={p.id}
+                className="w-[300px] rounded-3xl border bg-white p-6 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                      {t("bestSellerTag")}
+                    </div>
+
+                    <h3 className="mt-3 text-lg font-semibold text-gray-900">
+                      {p.name}
+                    </h3>
+
+                    {p.description ? (
+                      <p className="mt-2 text-sm text-gray-600">{p.description}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
+                    {formatPriceEUR(p.price)}
+                  </div>
+                </div>
+
+                <div className="mt-5 flex gap-3">
+                  <AddToCartButton product={p} label={t("addToCart")} />
+
+                  <Link
+                    href={`/${locale}/menu?category=${encodeURIComponent(p.category)}`}
+                    className="inline-flex items-center justify-center rounded-2xl border px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                  >
+                    {t("details")}
+                  </Link>
+                </div>
+
+                <div className="mt-4 text-xs font-semibold text-gray-500">
+                  Category: <span className="text-blue-700">{p.category}</span>
+                </div>
+              </div>
+            ))}
+
+            {bestSellers.length === 0 ? (
+              <div className="w-[300px] rounded-3xl border bg-white p-6 text-sm text-gray-600 shadow-sm">
+                No best sellers yet.
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </section>
 
       {/* ================= STICKY BOTTOM CTA (MOBILE) ================= */}
       <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-white/90 p-3 backdrop-blur md:hidden">
@@ -319,8 +270,9 @@ export default async function HomePage({
           >
             {t("ctaMenu")}
           </Link>
+
           <Link
-            href={`/${locale}/checkout`}
+            href={`/${locale}/cart`}
             className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"
           >
             {t("ctaOrder")}
