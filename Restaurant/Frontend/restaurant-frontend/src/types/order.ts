@@ -8,16 +8,17 @@ export enum OrderStatus {
 }
 
 export enum PaymentStatus {
-  PENDING = 'PENDING',
-  PAID = 'PAID',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED'
+  PENDING = "PENDING",
+  PAID = "PAID",
+  FAILED = "FAILED",
+  CANCELED = "CANCELED", // ✅ add
+  REFUNDED = "REFUNDED"
 }
 
 export enum PaymentMethod {
-  STRIPE = 'STRIPE',
-  PAYPAL = 'PAYPAL',
-  COD = 'COD'
+  STRIPE = "STRIPE",
+  PAYPAL = "PAYPAL",
+  COD = "COD"
 }
 
 export interface OrderItem {

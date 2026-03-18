@@ -1,8 +1,11 @@
 import Link from "next/link";
-import {getTranslations} from "next-intl/server";
-import {formatPriceEUR, getBestSellers, getCategories} from "@/lib/api";
-import type {Category, Product} from "@/types/product";
+import { getTranslations } from "next-intl/server";
+
+import { getBestSellers, getCategories, formatPriceEUR } from "@/lib/api";
+import type { Category, Product } from "@/types/product";
+
 import AddToCartButton from "@/components/AddToCartButton";
+import ProductCard from "@/components/ProductCard";
 
 /**
  * Pick an emoji for a given category key.
@@ -18,18 +21,12 @@ function categoryEmoji(category: string) {
   return "🍽️";
 }
 
-/**
- * Home page (Server Component).
- * - Categories come from server
- * - Best sellers come from server
- * - Shared header/footer are rendered in [locale]/layout.tsx
- */
 export default async function HomePage({
   params
 }: {
-  params: Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }) {
-  const {locale} = await params;
+  const { locale } = await params;
   const t = await getTranslations("home");
 
   const [categories, bestSellers] = await Promise.all([
@@ -40,15 +37,13 @@ export default async function HomePage({
   const popularToday: Product[] = bestSellers.slice(0, 3);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-14 px-4 pb-24 pt-8 md:pb-16">
-      {/* ================= HERO ================= */}
+    <main className="mx-auto max-w-6xl space-y-14 px-4 pb-24 pt-8 md:pb-16">
+      {/* HERO */}
       <section className="relative overflow-hidden rounded-3xl border bg-white p-8 md:p-12">
-        {/* Decorative gradients */}
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/60 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-sky-200/60 blur-3xl" />
 
         <div className="relative grid gap-10 md:grid-cols-2 md:items-center">
-          {/* Left: copy */}
           <div className="space-y-5">
             <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1 text-sm font-semibold text-blue-700">
               {t("badge")}
@@ -83,13 +78,19 @@ export default async function HomePage({
             </div>
 
             <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-              <span className="rounded-full border bg-white px-3 py-1">✓ {t("perkFast")}</span>
-              <span className="rounded-full border bg-white px-3 py-1">✓ {t("perkGuest")}</span>
-              <span className="rounded-full border bg-white px-3 py-1">✓ {t("perkPayment")}</span>
+              <span className="rounded-full border bg-white px-3 py-1">
+                ✓ {t("perkFast")}
+              </span>
+              <span className="rounded-full border bg-white px-3 py-1">
+                ✓ {t("perkGuest")}
+              </span>
+              <span className="rounded-full border bg-white px-3 py-1">
+                ✓ {t("perkPayment")}
+              </span>
             </div>
           </div>
 
-          {/* Right: Popular Today */}
+          {/* Popular today */}
           <div className="relative">
             <div className="rounded-3xl border bg-gradient-to-b from-blue-50 to-white p-6 shadow-sm">
               <div className="space-y-4">
@@ -109,17 +110,25 @@ export default async function HomePage({
                         key={item.id}
                         className="flex items-center justify-between rounded-2xl border bg-white p-4"
                       >
-                        <span className="font-semibold text-gray-900">
-                          {item.name}
-                        </span>
-                        <span className="font-bold text-blue-700">
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold text-gray-900">
+                            {item.name}
+                          </div>
+                          {item.description ? (
+                            <div className="mt-1 line-clamp-1 text-xs text-gray-500">
+                              {item.description}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <span className="ml-3 shrink-0 font-bold text-blue-700">
                           {formatPriceEUR(item.price)}
                         </span>
                       </div>
                     ))
                   ) : (
                     <div className="rounded-2xl border bg-white p-4 text-sm text-gray-600">
-                      No best sellers yet.
+                      {t("noBestSellers")}
                     </div>
                   )}
                 </div>
@@ -136,7 +145,7 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* ================= CATEGORIES ================= */}
+      {/* CATEGORIES */}
       <section className="space-y-5">
         <div className="flex items-end justify-between">
           <div>
@@ -178,7 +187,7 @@ export default async function HomePage({
 
         {categories.length === 0 ? (
           <div className="rounded-3xl border bg-white p-8 text-sm text-gray-600">
-            No categories found.
+            {t("noCategories")}
           </div>
         ) : null}
 
@@ -190,7 +199,7 @@ export default async function HomePage({
         </Link>
       </section>
 
-      {/* ================= BEST SELLERS ================= */}
+      {/* BEST SELLERS */}
       <section className="space-y-5">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -208,60 +217,64 @@ export default async function HomePage({
           </Link>
         </div>
 
-        <div className="-mx-4 overflow-x-auto px-4 pb-2">
-          <div className="flex min-w-max gap-4">
-            {bestSellers.map((p) => (
-              <div
-                key={p.id}
-                className="w-[300px] rounded-3xl border bg-white p-6 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                      {t("bestSellerTag")}
-                    </div>
-
-                    <h3 className="mt-3 text-lg font-semibold text-gray-900">
-                      {p.name}
-                    </h3>
-
-                    {p.description ? (
-                      <p className="mt-2 text-sm text-gray-600">{p.description}</p>
-                    ) : null}
-                  </div>
-
-                  <div className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
-                    {formatPriceEUR(p.price)}
-                  </div>
-                </div>
-
-                <div className="mt-5 flex gap-3">
-                  <AddToCartButton product={p} label={t("addToCart")} />
-
-                  <Link
-                    href={`/${locale}/menu?category=${encodeURIComponent(p.category)}`}
-                    className="inline-flex items-center justify-center rounded-2xl border px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-                  >
-                    {t("details")}
-                  </Link>
-                </div>
-
-                <div className="mt-4 text-xs font-semibold text-gray-500">
-                  Category: <span className="text-blue-700">{p.category}</span>
-                </div>
-              </div>
+        {bestSellers.length > 0 ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {bestSellers.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                locale={locale}
+                addToCartLabel={t("addToCart")}
+                addedLabel={t("addedToCart")}
+                detailsLabel={t("details")}
+                bestSellerLabel={t("bestSellerTag")}
+                categoryLabel={t("categoryLabel")}
+              />
             ))}
+          </div>
+        ) : (
+          <div className="rounded-3xl border bg-white p-8 text-sm text-gray-600">
+            {t("noBestSellers")}
+          </div>
+        )}
 
-            {bestSellers.length === 0 ? (
-              <div className="w-[300px] rounded-3xl border bg-white p-6 text-sm text-gray-600 shadow-sm">
-                No best sellers yet.
-              </div>
-            ) : null}
+        <Link
+          href={`/${locale}/menu`}
+          className="inline-flex rounded-xl border px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 md:hidden"
+        >
+          {t("seeAll")} →
+        </Link>
+      </section>
+
+      {/* QUICK ORDER STRIP */}
+      <section className="rounded-3xl border bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-extrabold text-gray-900">
+              {t("bestSellersTitle")}
+            </h2>
+            <p className="mt-1 text-gray-600">{t("bestSellersSubtitle")}</p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link
+              href={`/${locale}/menu`}
+              className="inline-flex items-center justify-center rounded-2xl border px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              {t("ctaMenu")}
+            </Link>
+
+            <Link
+              href={`/${locale}/cart`}
+              className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+            >
+              {t("ctaOrder")}
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ================= STICKY BOTTOM CTA (MOBILE) ================= */}
+      {/* MOBILE STICKY CTA */}
       <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-white/90 p-3 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4">
           <Link
@@ -279,6 +292,6 @@ export default async function HomePage({
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

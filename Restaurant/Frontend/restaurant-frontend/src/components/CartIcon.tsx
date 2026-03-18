@@ -3,18 +3,21 @@
 import {useCartStore} from "@/stores/cart-store";
 
 export default function CartIcon() {
-  const items = useCartStore((s) => s.items);
+  const items = useCartStore((state) => state.items);
 
-  const count = items.reduce((acc, i) => acc + i.quantity, 0);
+  const count = items.reduce((total, item) => total + item.quantity, 0);
 
   return (
-    <div className="relative">
-      🛒
-      {count > 0 && (
-        <span className="absolute -top-2 -right-2 rounded-full bg-red-500 px-2 text-xs text-white">
+    <div className="relative flex items-center justify-center">
+      <span className="text-xl" aria-hidden>
+        🛒
+      </span>
+
+      {count > 0 ? (
+        <span className="absolute -right-2 -top-2 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-white">
           {count}
         </span>
-      )}
+      ) : null}
     </div>
   );
 }

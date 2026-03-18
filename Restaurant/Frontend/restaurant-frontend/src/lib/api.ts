@@ -1,4 +1,5 @@
 import type {Category, Product} from "@/types/product";
+import type {CreateOrderRequest, Order} from "@/types/order";
 
 /**
  * Format a number to EUR currency (German format).
@@ -30,7 +31,7 @@ export async function getProducts(params?: {
 
   if (params?.category) url.searchParams.set("category", params.category);
   if (params?.bestSeller) url.searchParams.set("bestSeller", "true");
-
+  await new Promise((r) => setTimeout(r, 2000)); // add delay to simulate slow network
   const res = await fetch(url.toString(), {cache: "no-store"});
   if (!res.ok) throw new Error(`Failed to fetch products: ${res.status} ${res.statusText}`);
 
@@ -58,4 +59,25 @@ export async function getCategories(): Promise<Category[]> {
  */
 export async function getBestSellers(): Promise<Product[]> {
   return getProducts({bestSeller: true});
+}
+
+/**
+ * Create a new order in the Java backend.
+ */
+export async function createOrder(payload: CreateOrderRequest): Promise<Order> {
+  const url = backendUrl("/api/orders");
+
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to create order: ${res.status} ${res.statusText}`);
+  }
+
+  return res.json();
 }

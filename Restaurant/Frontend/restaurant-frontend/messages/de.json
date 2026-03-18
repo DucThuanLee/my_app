@@ -6,7 +6,16 @@
     "navMenu": "Speisekarte",
     "orderNow": "Jetzt bestellen",
     "cart": "Warenkorb",
-    "goToCart": "Zum Warenkorb"
+    "goToCart": "Zum Warenkorb",
+    "cartEmptyTitle": "Ihr Warenkorb ist leer",
+    "cartEmptySubtitle": "Fügen Sie Getränke oder Snacks hinzu, um zu starten.",
+    "clearCart": "Warenkorb leeren",
+    "subtotal": "Zwischensumme",
+    "total": "Gesamt",
+    "checkout": "Zur Kasse",
+    "remove": "Entfernen",
+    "decreaseQuantity": "Menge verringern",
+    "increaseQuantity": "Menge erhöhen"
   },
   "home": {
     "badge": "Frisch • Schnell • Lokal",
@@ -41,7 +50,8 @@
     "categoryCardHint": "Entdecke diese Kategorie und finde die heutigen Favoriten.",
     "noBestSellers": "Noch keine Bestseller vorhanden.",
     "noCategories": "Keine Kategorien gefunden.",
-    "categoryLabel": "Kategorie"
+    "categoryLabel": "Kategorie",
+    "addedToCart": "Hinzugefügt"
   },
   "menu": {
     "title": "Speisekarte",
@@ -58,7 +68,8 @@
     "emptyTitle": "Keine Artikel gefunden",
     "emptySubtitle": "Versuche eine andere Suche oder setze die Filter zurück.",
     "reset": "Filter zurücksetzen",
-    "bestSeller": "Bestseller"
+    "bestSeller": "Bestseller",
+    "addedToCart": "Hinzugefügt"
   },
   "cart": {
     "title": "Warenkorb",
@@ -77,5 +88,29 @@
     "goToCheckout": "Zur Kasse",
     "decreaseQuantity": "Menge verringern",
     "increaseQuantity": "Menge erhöhen"
+  },
+  "checkout": {
+    "title": "Kasse",
+    "subtitle": "Überprüfen Sie Ihre Bestellung und schließen Sie den Kauf ab.",
+    "emptyTitle": "Ihr Warenkorb ist leer",
+    "emptySubtitle": "Fügen Sie vor dem Bezahlen Getränke oder Snacks hinzu.",
+    "browseMenu": "Speisekarte ansehen",
+    "customerInfo": "Kundendaten",
+    "fullName": "Vollständiger Name",
+    "phone": "Telefonnummer",
+    "email": "E-Mail",
+    "address": "Adresse",
+    "notes": "Bestellhinweise",
+    "notesPlaceholder": "Allergien, Wünsche oder Lieferhinweise?",
+    "paymentMethod": "Zahlungsmethode",
+    "paymentCash": "Barzahlung bei Lieferung",
+    "paymentPaypal": "PayPal",
+    "paymentStripe": "Kreditkarte / Stripe",
+    "summary": "Bestellübersicht",
+    "items": "{count} Artikel",
+    "deliveryFee": "Liefergebühr",
+    "total": "Gesamt",
+    "placeOrder": "Bestellung aufgeben",
+    "backToCart": "Zurück zum Warenkorb"
   }
 }

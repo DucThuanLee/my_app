@@ -1,12 +1,12 @@
-import type {ReactNode} from "react";
-import {NextIntlClientProvider} from "next-intl";
-import {getMessages, getTranslations, setRequestLocale} from "next-intl/server";
-import {hasLocale} from "next-intl";
-import {notFound} from "next/navigation";
-import {routing} from "../../../i18n/routing"; // Adjusted path to the correct location
+import type { ReactNode } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
+import { hasLocale } from "next-intl";
+import { notFound } from "next/navigation";
 import Link from "next/link";
-import CartIcon from "@/components/CartIcon";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { routing } from "@i18n/routing";
+import CartDrawer from "@/components/CartDrawer";
 
 
 export default async function LocaleLayout({
@@ -14,9 +14,9 @@ export default async function LocaleLayout({
   params
 }: {
   children: ReactNode;
-  params: Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }) {
-  const {locale} = await params;
+  const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
@@ -70,14 +70,20 @@ export default async function LocaleLayout({
           <div className="flex items-center gap-2">
             <LanguageSwitcher locale={locale} />
 
-            <Link
-              href={`/${locale}/cart`}
-              className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-              aria-label={t("goToCart")}
-            >
-              <CartIcon />
-              <span className="hidden sm:inline">{t("cart")}</span>
-            </Link>
+            <CartDrawer
+              locale={locale}
+              title={t("cart")}
+              emptyTitle={t("cartEmptyTitle")}
+              emptySubtitle={t("cartEmptySubtitle")}
+              continueShoppingLabel={t("navMenu")}
+              clearCartLabel={t("clearCart")}
+              subtotalLabel={t("subtotal")}
+              totalLabel={t("total")}
+              checkoutLabel={t("checkout")}
+              removeLabel={t("remove")}
+              decreaseLabel={t("decreaseQuantity")}
+              increaseLabel={t("increaseQuantity")}
+            />
           </div>
         </div>
       </header>

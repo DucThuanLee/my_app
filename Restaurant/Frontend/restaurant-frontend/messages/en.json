@@ -41,7 +41,8 @@
     "categoryCardHint": "Explore this category and discover today’s favorites.",
     "noBestSellers": "No best sellers yet.",
     "noCategories": "No categories found.",
-    "categoryLabel": "Category"
+    "categoryLabel": "Category",
+    "addedToCart": "Added"
   },
   "menu": {
     "title": "Menu",
@@ -58,7 +59,8 @@
     "emptyTitle": "No items found",
     "emptySubtitle": "Try a different search or reset filters.",
     "reset": "Reset filters",
-    "bestSeller": "Best Seller"
+    "bestSeller": "Best Seller",
+    "addedToCart": "Added"
   },
   "cart": {
     "title": "Cart",
