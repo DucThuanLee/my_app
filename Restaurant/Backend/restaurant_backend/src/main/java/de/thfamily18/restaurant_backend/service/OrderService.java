@@ -64,6 +64,15 @@ public class OrderService {
         return orders.map(o -> toResponse(o, lang));
     }
 
+    @Transactional(readOnly = true)
+    public OrderResponse getById(UUID id, String langHeader) {
+        Order order = orderRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
+
+        String lang = normalizeLang(langHeader);
+        return toResponse(order, lang);
+    }
+
     // ===== Admin =====
     @Transactional(readOnly = true)
     public Page<OrderResponse> adminList(OrderStatus status, int page, int size, String langHeader) {

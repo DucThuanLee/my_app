@@ -35,9 +35,13 @@ public class ProductController {
         return service.getBestSellers(lang, category);
     }
 
-    @Operation(summary = "Get categories")
     @GetMapping("/categories")
-    public List<String> categories() {
+    @Operation(summary = "List product categories")
+    public List<String> getCategories(
+            @RequestHeader(name = "Accept-Language", defaultValue = "de") String lang
+    ) {
+        // The language header is accepted for API consistency.
+        // Categories are currently language-independent.
         return service.getCategories();
     }
 

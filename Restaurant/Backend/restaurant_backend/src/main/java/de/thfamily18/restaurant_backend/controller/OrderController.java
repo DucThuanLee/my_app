@@ -3,6 +3,7 @@ package de.thfamily18.restaurant_backend.controller;
 import de.thfamily18.restaurant_backend.dto.CreateOrderRequest;
 import de.thfamily18.restaurant_backend.dto.OrderResponse;
 import de.thfamily18.restaurant_backend.service.OrderService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 // Guest create
 @RestController
@@ -36,5 +39,13 @@ public class OrderController {
                 : service.createGuestOrder(req, lang);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderResponse> getById(
+            @PathVariable UUID id,
+            @RequestHeader(name = "Accept-Language", defaultValue = "de") String lang
+    ) {
+        return ResponseEntity.ok(service.getById(id, lang));
     }
 }
