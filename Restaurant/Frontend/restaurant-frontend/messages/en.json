@@ -13,7 +13,7 @@
     "cart": "Cart",
     "goToCart": "Go to cart",
     "cartEmptyTitle": "Your cart is empty",
-    "cartEmptySubtitle": "Add some drinks or snacks to get started.",
+    "cartEmptySubtitle": "Add drinks or snacks to get started.",
     "clearCart": "Clear cart",
     "subtotal": "Subtotal",
     "total": "Total",
@@ -30,7 +30,7 @@
     "badge2": "Made with love",
     "heroTitle": "Milk tea & street food",
     "heroTitle2": "Freshly prepared every day",
-    "heroSubtitle": "Order your favorite drinks and snacks online. Guest checkout available.",
+    "heroSubtitle": "Order your favorite drinks and snacks online.",
     "ctaMenu": "View menu",
     "ctaOrder": "Order now",
     "perkFast": "Fast preparation",
@@ -41,15 +41,14 @@
     "etaLabel": "Estimated delivery time",
     "etaValue": "25–35 minutes",
     "bestSellersTitle": "Best sellers",
-    "bestSellersSubtitle": "Customer favorites you’ll love.",
+    "bestSellersSubtitle": "Customer favorites.",
     "seeAll": "See all",
     "addToCart": "Add to cart",
     "details": "Details",
     "categories": "Categories",
-    "categoriesSubtitle": "Choose a category and start ordering.",
+    "categoriesSubtitle": "Choose a category.",
     "explore": "Explore",
-    "brand": "Milk Tea Restaurant",
-    "categoryCardHint": "Discover items in this category.",
+    "categoryCardHint": "Discover this category.",
     "noBestSellers": "No best sellers yet.",
     "noCategories": "No categories found.",
     "categoryLabel": "Category",
@@ -58,9 +57,9 @@
 
   "menu": {
     "title": "Menu",
-    "subtitle": "Choose your favorite items and order quickly.",
+    "subtitle": "Choose your favorites.",
     "tabAll": "All",
-    "searchPlaceholder": "Search drinks or food…",
+    "searchPlaceholder": "Search…",
     "search": "Search",
     "results": "{count} items",
     "backHome": "Back to home",
@@ -69,7 +68,7 @@
     "details": "Details",
     "category": "Category",
     "emptyTitle": "No items found",
-    "emptySubtitle": "Try another search or reset filters.",
+    "emptySubtitle": "Try another search.",
     "reset": "Reset filters",
     "bestSeller": "Best seller",
     "addedToCart": "Added"
@@ -77,11 +76,11 @@
 
   "cart": {
     "title": "Cart",
-    "subtitle": "Review your order before checkout.",
+    "subtitle": "Review your order.",
     "continueShopping": "Continue shopping",
     "clearCart": "Clear cart",
     "emptyTitle": "Your cart is empty",
-    "emptySubtitle": "Add some items to get started.",
+    "emptySubtitle": "Add items to get started.",
     "browseMenu": "Browse menu",
     "category": "Category",
     "remove": "Remove",
@@ -96,18 +95,18 @@
 
   "checkout": {
     "title": "Checkout",
-    "subtitle": "Review your order and complete payment.",
+    "subtitle": "Review and complete your order.",
     "emptyTitle": "Your cart is empty",
-    "emptySubtitle": "Add items before checkout.",
+    "emptySubtitle": "Add items first.",
     "browseMenu": "Browse menu",
     "customerInfo": "Customer information",
     "fullName": "Full name",
     "phone": "Phone",
     "address": "Address",
     "notes": "Notes",
-    "notesPlaceholder": "Allergies or delivery notes?",
+    "notesPlaceholder": "Allergies, notes...",
     "paymentMethod": "Payment method",
-    "paymentCash": "Cash on delivery",
+    "paymentCash": "Cash",
     "paymentPaypal": "PayPal",
     "paymentStripe": "Card / Stripe",
     "summary": "Order summary",
@@ -115,71 +114,105 @@
     "deliveryFee": "Delivery fee",
     "total": "Total",
     "placeOrder": "Place order",
-    "backToCart": "Back to cart"
+    "placingOrder": "Creating order...",
+    "backToCart": "Back",
+    "payNow": "Pay now",
+    "processingPayment": "Processing payment...",
+    "errorEmptyCart": "Cart is empty",
+    "errorRequiredFields": "Please fill all fields",
+    "errorCreateOrder": "Failed to create order",
+    "stepDetails": "Create order",
+    "stepPayment": "Complete payment",
+    "continueToNextStep": "Continue",
+    "step2Title": "Stripe payment",
+    "step2Subtitle": "Complete your payment",
+    "orderId": "Order ID",
+    "paymentIntentId": "Payment Intent ID",
+    "backToDetails": "Back"
   },
 
   "account": {
     "badge": "My account",
     "title": "Account overview",
-    "subtitle": "Manage your session and quick access.",
-    "sessionTitle": "Session",
-    "sessionSubtitle": "You are logged in.",
-    "tokenLabel": "Access token",
+    "subtitle": "Manage your account.",
+    "profileTitle": "Profile",
+    "profileSubtitle": "Your info.",
+    "emailLabel": "Email",
+    "roleLabel": "Role",
     "quickActions": "Quick actions",
-    "quickActionsSubtitle": "Jump back to ordering.",
-    "goToMenu": "Go to menu",
-    "goToCart": "Go to cart",
-    "goToCheckout": "Go to checkout"
+    "quickActionsSubtitle": "Quick access",
+    "goToMenu": "Menu",
+    "goToOrders": "Orders",
+    "goToCart": "Cart",
+    "goToCheckout": "Checkout"
   },
 
   "orders": {
-    "title": "My orders",
-    "subtitle": "Your order history will appear here."
+    "badge": "My orders",
+    "title": "Order history",
+    "subtitle": "All your orders.",
+    "emptyTitle": "No orders yet",
+    "emptySubtitle": "You haven’t ordered anything.",
+    "goToMenu": "Go to menu",
+    "goToAccount": "Back to account",
+    "orderNumber": "Order number",
+    "placedAt": "Placed at",
+    "total": "Total",
+    "items": "Items",
+    "viewOrder": "View",
+    "reorder": "Reorder",
+    "paymentStatusLabels": {
+      "PENDING": "Pending",
+      "PAID": "Paid",
+      "FAILED": "Failed",
+      "CANCELED": "Canceled",
+      "REFUNDED": "Refunded"
+    },
+    "orderStatusLabels": {
+      "NEW": "New",
+      "PREPARING": "Preparing",
+      "DONE": "Done",
+      "CANCELLED": "Cancelled"
+    }
+  },
+
+  "order": {
+    "title": "Order confirmed",
+    "subtitle": "Your order has been created successfully.",
+    "paymentStatus": "Payment status",
+    "orderStatus": "Order status",
+    "summary": "Order summary",
+    "total": "Total",
+    "backToMenu": "Back to menu",
+    "backHome": "Back to home",
+    "waitingForPayment": "Waiting for payment...",
+    "checkingPayment": "Checking payment status...",
+    "cartCleared": "Cart cleared",
+    "statusLabels": {
+      "payment": {
+        "PENDING": "Pending",
+        "PAID": "Paid",
+        "FAILED": "Failed",
+        "CANCELED": "Canceled",
+        "REFUNDED": "Refunded"
+      },
+      "order": {
+        "NEW": "New",
+        "PREPARING": "Preparing",
+        "DONE": "Done",
+        "CANCELLED": "Cancelled"
+      }
+    }
   },
 
   "auth": {
-    "fields": {
-      "email": "Email",
-      "password": "Password",
-      "confirmPassword": "Confirm password"
-    },
-    "placeholders": {
-      "email": "Enter your email",
-      "password": "Enter your password",
-      "confirmPassword": "Confirm your password"
-    },
-    "errors": {
-      "required": "Please fill all required fields.",
-      "loginFailed": "Login failed.",
-      "registerFailed": "Register failed.",
-      "passwordTooShort": "Password must be at least 8 characters.",
-      "passwordsDoNotMatch": "Passwords do not match.",
-      "acceptTerms": "Please accept terms."
-    },
     "login": {
-      "badge": "Welcome back",
-      "title": "Sign in",
-      "subtitle": "Access your account",
-      "formTitle": "Login",
-      "formSubtitle": "Enter your credentials",
-      "rememberMe": "Remember me",
-      "forgotPassword": "Forgot password?",
-      "submit": "Sign in",
-      "signingIn": "Signing in...",
-      "footerText": "No account?",
-      "footerLink": "Register"
+      "title": "Login",
+      "submit": "Login"
     },
     "register": {
-      "badge": "Create account",
       "title": "Register",
-      "subtitle": "Create your account",
-      "formTitle": "Register",
-      "formSubtitle": "Quick registration",
-      "acceptTerms": "I accept terms",
-      "submit": "Register",
-      "creating": "Creating...",
-      "footerText": "Already have an account?",
-      "footerLink": "Login"
+      "submit": "Register"
     }
   }
 }

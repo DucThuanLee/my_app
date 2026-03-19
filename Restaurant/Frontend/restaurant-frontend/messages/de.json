@@ -13,7 +13,7 @@
     "cart": "Warenkorb",
     "goToCart": "Zum Warenkorb",
     "cartEmptyTitle": "Ihr Warenkorb ist leer",
-    "cartEmptySubtitle": "Fügen Sie Getränke oder Snacks hinzu, um zu starten.",
+    "cartEmptySubtitle": "Fügen Sie Getränke oder Snacks hinzu.",
     "clearCart": "Warenkorb leeren",
     "subtotal": "Zwischensumme",
     "total": "Gesamt",
@@ -30,7 +30,7 @@
     "badge2": "Mit Liebe gemacht",
     "heroTitle": "Milchtee & Street Food",
     "heroTitle2": "Jeden Tag frisch zubereitet",
-    "heroSubtitle": "Bestellen Sie Ihre Lieblingsgetränke und Snacks online. Gastbestellung möglich.",
+    "heroSubtitle": "Bestellen Sie Ihre Lieblingsgetränke und Snacks online.",
     "ctaMenu": "Speisekarte ansehen",
     "ctaOrder": "Jetzt bestellen",
     "perkFast": "Schnelle Zubereitung",
@@ -46,9 +46,8 @@
     "addToCart": "In den Warenkorb",
     "details": "Details",
     "categories": "Kategorien",
-    "categoriesSubtitle": "Wählen Sie eine Kategorie und bestellen Sie sofort.",
+    "categoriesSubtitle": "Wählen Sie eine Kategorie.",
     "explore": "Entdecken",
-    "brand": "Milk Tea Restaurant",
     "categoryCardHint": "Entdecken Sie diese Kategorie.",
     "noBestSellers": "Noch keine Bestseller vorhanden.",
     "noCategories": "Keine Kategorien gefunden.",
@@ -58,9 +57,9 @@
 
   "menu": {
     "title": "Speisekarte",
-    "subtitle": "Wählen Sie Ihre Lieblingsgerichte und bestellen Sie schnell.",
+    "subtitle": "Wählen Sie Ihre Lieblingsgerichte.",
     "tabAll": "Alle",
-    "searchPlaceholder": "Getränke oder Snacks suchen…",
+    "searchPlaceholder": "Suchen…",
     "search": "Suchen",
     "results": "{count} Artikel",
     "backHome": "Zur Startseite",
@@ -69,7 +68,7 @@
     "details": "Details",
     "category": "Kategorie",
     "emptyTitle": "Keine Artikel gefunden",
-    "emptySubtitle": "Versuchen Sie eine andere Suche oder setzen Sie Filter zurück.",
+    "emptySubtitle": "Versuchen Sie eine andere Suche.",
     "reset": "Filter zurücksetzen",
     "bestSeller": "Bestseller",
     "addedToCart": "Hinzugefügt"
@@ -77,11 +76,11 @@
 
   "cart": {
     "title": "Warenkorb",
-    "subtitle": "Überprüfen Sie Ihre Bestellung vor dem Bezahlen.",
+    "subtitle": "Überprüfen Sie Ihre Bestellung.",
     "continueShopping": "Weiter einkaufen",
     "clearCart": "Warenkorb leeren",
     "emptyTitle": "Ihr Warenkorb ist leer",
-    "emptySubtitle": "Fügen Sie Artikel hinzu, um zu starten.",
+    "emptySubtitle": "Fügen Sie Artikel hinzu.",
     "browseMenu": "Speisekarte ansehen",
     "category": "Kategorie",
     "remove": "Entfernen",
@@ -96,90 +95,124 @@
 
   "checkout": {
     "title": "Kasse",
-    "subtitle": "Überprüfen Sie Ihre Bestellung und schließen Sie den Kauf ab.",
+    "subtitle": "Bestellung überprüfen und bezahlen.",
     "emptyTitle": "Ihr Warenkorb ist leer",
-    "emptySubtitle": "Fügen Sie Artikel hinzu, bevor Sie bezahlen.",
+    "emptySubtitle": "Fügen Sie Artikel hinzu.",
     "browseMenu": "Speisekarte ansehen",
     "customerInfo": "Kundendaten",
-    "fullName": "Vollständiger Name",
+    "fullName": "Name",
     "phone": "Telefon",
     "address": "Adresse",
     "notes": "Hinweise",
-    "notesPlaceholder": "Allergien oder Lieferhinweise?",
+    "notesPlaceholder": "Allergien etc.",
     "paymentMethod": "Zahlungsmethode",
-    "paymentCash": "Barzahlung bei Lieferung",
+    "paymentCash": "Barzahlung",
     "paymentPaypal": "PayPal",
     "paymentStripe": "Karte / Stripe",
     "summary": "Bestellübersicht",
     "items": "{count} Artikel",
     "deliveryFee": "Liefergebühr",
     "total": "Gesamt",
-    "placeOrder": "Bestellung aufgeben",
-    "backToCart": "Zurück zum Warenkorb"
+    "placeOrder": "Bestellen",
+    "placingOrder": "Bestellung wird erstellt...",
+    "backToCart": "Zurück",
+    "payNow": "Jetzt bezahlen",
+    "processingPayment": "Zahlung läuft...",
+    "errorEmptyCart": "Warenkorb leer",
+    "errorRequiredFields": "Bitte Felder ausfüllen",
+    "errorCreateOrder": "Fehler beim Erstellen",
+    "stepDetails": "Bestellung erstellen",
+    "stepPayment": "Zahlung abschließen",
+    "continueToNextStep": "Weiter",
+    "step2Title": "Stripe-Zahlung",
+    "step2Subtitle": "Zahlung abschließen",
+    "orderId": "Bestellnummer",
+    "paymentIntentId": "Payment-ID",
+    "backToDetails": "Zurück"
   },
 
   "account": {
     "badge": "Mein Konto",
     "title": "Kontoübersicht",
-    "subtitle": "Verwalten Sie Ihre Sitzung und greifen Sie schnell auf Bestellungen zu.",
-    "sessionTitle": "Sitzung",
-    "sessionSubtitle": "Sie sind angemeldet.",
-    "tokenLabel": "Access-Token",
-    "quickActions": "Schnellzugriffe",
-    "quickActionsSubtitle": "Schnell zurück zum Bestellen.",
-    "goToMenu": "Zur Speisekarte",
-    "goToCart": "Zum Warenkorb",
+    "subtitle": "Verwalten Sie Ihr Konto.",
+    "profileTitle": "Profil",
+    "profileSubtitle": "Ihre Daten.",
+    "emailLabel": "E-Mail",
+    "roleLabel": "Rolle",
+    "quickActions": "Aktionen",
+    "quickActionsSubtitle": "Schnellzugriff",
+    "goToMenu": "Speisekarte",
+    "goToOrders": "Bestellungen",
+    "goToCart": "Warenkorb",
     "goToCheckout": "Zur Kasse"
   },
 
   "orders": {
-    "title": "Meine Bestellungen",
-    "subtitle": "Ihre Bestellhistorie wird hier angezeigt."
+    "badge": "Meine Bestellungen",
+    "title": "Bestellverlauf",
+    "subtitle": "Alle Bestellungen.",
+    "emptyTitle": "Keine Bestellungen",
+    "emptySubtitle": "Noch nichts bestellt.",
+    "goToMenu": "Speisekarte",
+    "goToAccount": "Konto",
+    "orderNumber": "Bestellnummer",
+    "placedAt": "Datum",
+    "total": "Gesamt",
+    "items": "Artikel",
+    "viewOrder": "Details",
+    "reorder": "Erneut bestellen",
+    "paymentStatusLabels": {
+      "PENDING": "Ausstehend",
+      "PAID": "Bezahlt",
+      "FAILED": "Fehlgeschlagen",
+      "CANCELED": "Storniert",
+      "REFUNDED": "Erstattet"
+    },
+    "orderStatusLabels": {
+      "NEW": "Neu",
+      "PREPARING": "In Vorbereitung",
+      "DONE": "Fertig",
+      "CANCELLED": "Abgebrochen"
+    }
+  },
+
+  "order": {
+    "title": "Bestellung bestätigt",
+    "subtitle": "Ihre Bestellung wurde erfolgreich erstellt.",
+    "paymentStatus": "Zahlungsstatus",
+    "orderStatus": "Bestellstatus",
+    "summary": "Bestellübersicht",
+    "total": "Gesamt",
+    "backToMenu": "Zur Speisekarte",
+    "backHome": "Zur Startseite",
+    "waitingForPayment": "Warten auf Zahlung...",
+    "checkingPayment": "Zahlung wird geprüft...",
+    "cartCleared": "Warenkorb geleert",
+    "statusLabels": {
+      "payment": {
+        "PENDING": "Ausstehend",
+        "PAID": "Bezahlt",
+        "FAILED": "Fehlgeschlagen",
+        "CANCELED": "Storniert",
+        "REFUNDED": "Erstattet"
+      },
+      "order": {
+        "NEW": "Neu",
+        "PREPARING": "In Vorbereitung",
+        "DONE": "Fertig",
+        "CANCELLED": "Abgebrochen"
+      }
+    }
   },
 
   "auth": {
-    "fields": {
-      "email": "E-Mail",
-      "password": "Passwort",
-      "confirmPassword": "Passwort bestätigen"
-    },
-    "placeholders": {
-      "email": "E-Mail eingeben",
-      "password": "Passwort eingeben",
-      "confirmPassword": "Passwort bestätigen"
-    },
-    "errors": {
-      "required": "Bitte alle Pflichtfelder ausfüllen.",
-      "loginFailed": "Anmeldung fehlgeschlagen.",
-      "registerFailed": "Registrierung fehlgeschlagen.",
-      "passwordTooShort": "Passwort muss mindestens 8 Zeichen lang sein.",
-      "passwordsDoNotMatch": "Passwörter stimmen nicht überein.",
-      "acceptTerms": "Bitte Bedingungen akzeptieren."
-    },
     "login": {
-      "badge": "Willkommen zurück",
       "title": "Anmelden",
-      "subtitle": "Greifen Sie auf Ihr Konto zu",
-      "formTitle": "Login",
-      "formSubtitle": "Geben Sie Ihre Daten ein",
-      "rememberMe": "Angemeldet bleiben",
-      "forgotPassword": "Passwort vergessen?",
-      "submit": "Anmelden",
-      "signingIn": "Anmeldung läuft...",
-      "footerText": "Noch kein Konto?",
-      "footerLink": "Registrieren"
+      "submit": "Login"
     },
     "register": {
-      "badge": "Konto erstellen",
       "title": "Registrieren",
-      "subtitle": "Erstellen Sie Ihr Konto",
-      "formTitle": "Registrieren",
-      "formSubtitle": "Schnelle Registrierung",
-      "acceptTerms": "Ich akzeptiere die Bedingungen",
-      "submit": "Registrieren",
-      "creating": "Wird erstellt...",
-      "footerText": "Schon ein Konto?",
-      "footerLink": "Anmelden"
+      "submit": "Registrieren"
     }
   }
 }

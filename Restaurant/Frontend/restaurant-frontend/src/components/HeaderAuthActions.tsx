@@ -6,6 +6,12 @@ import {useRouter} from "next/navigation";
 
 import {useAuthStore} from "@/stores/auth-store";
 import {clearAccessToken} from "@/lib/auth-storage";
+import {
+  getEmailFromToken,
+  getInitialFromEmail,
+  getRoleFromToken,
+  isTokenExpired
+} from "@/lib/jwt";
 
 type Props = {
   locale: string;
@@ -30,10 +36,28 @@ export default function HeaderAuthActions({
 
   const hydrated = useAuthStore((state) => state.hydrated);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const accessToken = useAuthStore((state) => state.accessToken);
   const logout = useAuthStore((state) => state.logout);
 
   const [desktopOpen, setDesktopOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const email = getEmailFromToken(accessToken);
+  const role = getRoleFromToken(accessToken);
+  const initial = getInitialFromEmail(email);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!accessToken) return;
+
+    if (isTokenExpired(accessToken)) {
+      clearAccessToken();
+      logout();
+      setDesktopOpen(false);
+      setMobileOpen(false);
+      router.refresh();
+    }
+  }, [hydrated, accessToken, logout, router]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -158,14 +182,30 @@ export default function HeaderAuthActions({
           aria-haspopup="menu"
         >
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
-            A
+            {initial}
           </span>
           <span>{accountLabel}</span>
           <span className="text-xs text-gray-400">▾</span>
         </button>
 
         {desktopOpen ? (
-          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-56 rounded-2xl border bg-white p-2 shadow-xl">
+          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 rounded-2xl border bg-white p-2 shadow-xl">
+            {email ? (
+              <div className="mb-2 rounded-xl bg-gray-50 px-4 py-3">
+                <div className="text-xs font-semibold text-gray-500">
+                  Signed in as
+                </div>
+                <div className="mt-1 break-all text-sm font-medium text-gray-800">
+                  {email}
+                </div>
+                {role ? (
+                  <div className="mt-1 text-xs font-semibold text-blue-700">
+                    {role}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             <Link
               href={`/${locale}/account`}
               onClick={() => setDesktopOpen(false)}
@@ -203,12 +243,28 @@ export default function HeaderAuthActions({
           aria-label="Open account menu"
         >
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
-            A
+            {initial}
           </span>
         </button>
 
         {mobileOpen ? (
-          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-52 rounded-2xl border bg-white p-2 shadow-xl">
+          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-56 rounded-2xl border bg-white p-2 shadow-xl">
+            {email ? (
+              <div className="mb-2 rounded-xl bg-gray-50 px-4 py-3">
+                <div className="text-xs font-semibold text-gray-500">
+                  Signed in as
+                </div>
+                <div className="mt-1 break-all text-sm font-medium text-gray-800">
+                  {email}
+                </div>
+                {role ? (
+                  <div className="mt-1 text-xs font-semibold text-blue-700">
+                    {role}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             <Link
               href={`/${locale}/account`}
               onClick={() => setMobileOpen(false)}

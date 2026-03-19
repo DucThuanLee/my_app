@@ -1,17 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import {useMemo} from "react";
 import {useParams} from "next/navigation";
 import {useTranslations} from "next-intl";
 
 import RequireAuth from "@/components/RequireAuth";
 import {useAuthStore} from "@/stores/auth-store";
+import {getEmailFromToken, getInitialFromEmail, getRoleFromToken} from "@/lib/jwt";
 
 export default function AccountPage() {
   const {locale} = useParams<{locale: string}>();
   const t = useTranslations("account");
 
   const accessToken = useAuthStore((state) => state.accessToken);
+
+  const email = useMemo(() => getEmailFromToken(accessToken), [accessToken]);
+  const role = useMemo(() => getRoleFromToken(accessToken), [accessToken]);
+  const initial = useMemo(() => getInitialFromEmail(email), [email]);
 
   return (
     <RequireAuth>
@@ -21,32 +27,62 @@ export default function AccountPage() {
             {t("badge")}
           </span>
 
-          <h1 className="mt-4 text-3xl font-extrabold text-gray-900">
-            {t("title")}
-          </h1>
+          <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
+            <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-blue-600 text-2xl font-extrabold text-white shadow-sm">
+              {initial}
+            </div>
 
-          <p className="mt-2 text-gray-600">
-            {t("subtitle")}
-          </p>
+            <div className="min-w-0">
+              <h1 className="text-3xl font-extrabold text-gray-900">
+                {t("title")}
+              </h1>
+
+              <p className="mt-2 text-gray-600">
+                {t("subtitle")}
+              </p>
+
+              {email ? (
+                <div className="mt-3 text-sm font-semibold text-gray-900 break-all">
+                  {email}
+                </div>
+              ) : null}
+
+              {role ? (
+                <div className="mt-2 inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                  {t("roleLabel")}: {role}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-3xl border bg-white p-6 shadow-sm">
             <h2 className="text-xl font-extrabold text-gray-900">
-              {t("sessionTitle")}
+              {t("profileTitle")}
             </h2>
 
             <p className="mt-2 text-sm text-gray-600">
-              {t("sessionSubtitle")}
+              {t("profileSubtitle")}
             </p>
 
-            <div className="mt-5 rounded-2xl bg-blue-50 p-4">
-              <div className="text-sm font-semibold text-blue-700">
-                {t("tokenLabel")}
+            <div className="mt-5 space-y-4">
+              <div className="rounded-2xl bg-blue-50 p-4">
+                <div className="text-sm font-semibold text-blue-700">
+                  {t("emailLabel")}
+                </div>
+                <div className="mt-2 break-all text-sm text-gray-800">
+                  {email ?? "-"}
+                </div>
               </div>
 
-              <div className="mt-2 break-all text-sm text-gray-700">
-                {accessToken ?? "-"}
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <div className="text-sm font-semibold text-gray-700">
+                  {t("roleLabel")}
+                </div>
+                <div className="mt-2 text-sm text-gray-800">
+                  {role ?? "-"}
+                </div>
               </div>
             </div>
           </div>
@@ -66,6 +102,13 @@ export default function AccountPage() {
                 className="inline-flex items-center justify-center rounded-2xl border px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50"
               >
                 {t("goToMenu")}
+              </Link>
+
+              <Link
+                href={`/${locale}/orders`}
+                className="inline-flex items-center justify-center rounded-2xl border px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50"
+              >
+                {t("goToOrders")}
               </Link>
 
               <Link
