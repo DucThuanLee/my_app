@@ -81,8 +81,9 @@ export default async function LocaleLayout({
                 locale={locale}
                 loginLabel={t("login")}
                 registerLabel={t("register")}
-                logoutLabel={t("logout")}
                 accountLabel={t("account")}
+                ordersLabel={t("orders")}
+                logoutLabel={t("logout")}
               />
 
               <CartDrawer
@@ -122,8 +123,9 @@ export default async function LocaleLayout({
                 locale={locale}
                 loginLabel={t("login")}
                 registerLabel={t("register")}
-                logoutLabel={t("logout")}
                 accountLabel={t("account")}
+                ordersLabel={t("orders")}
+                logoutLabel={t("logout")}
               />
             </div>
           </div>

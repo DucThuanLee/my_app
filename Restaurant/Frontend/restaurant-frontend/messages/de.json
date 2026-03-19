@@ -7,6 +7,9 @@
     "orderNow": "Jetzt bestellen",
     "login": "Anmelden",
     "register": "Registrieren",
+    "account": "Konto",
+    "orders": "Bestellungen",
+    "logout": "Abmelden",
     "cart": "Warenkorb",
     "goToCart": "Zum Warenkorb",
     "cartEmptyTitle": "Ihr Warenkorb ist leer",
@@ -19,16 +22,15 @@
     "decreaseQuantity": "Menge verringern",
     "increaseQuantity": "Menge erhöhen",
     "imprint": "Impressum",
-    "privacy": "Datenschutz",
-    "account": "Konto",
-    "logout": "Abmelden"
+    "privacy": "Datenschutz"
   },
+
   "home": {
     "badge": "Frisch • Schnell • Lokal",
     "badge2": "Mit Liebe gemacht",
     "heroTitle": "Milchtee & Street Food",
     "heroTitle2": "Jeden Tag frisch zubereitet",
-    "heroSubtitle": "Bestellen Sie Ihre Lieblingsgetränke und Snacks online. Gastbestellung ohne Konto möglich.",
+    "heroSubtitle": "Bestellen Sie Ihre Lieblingsgetränke und Snacks online. Gastbestellung möglich.",
     "ctaMenu": "Speisekarte ansehen",
     "ctaOrder": "Jetzt bestellen",
     "perkFast": "Schnelle Zubereitung",
@@ -39,29 +41,24 @@
     "etaLabel": "Geschätzte Lieferzeit",
     "etaValue": "25–35 Minuten",
     "bestSellersTitle": "Bestseller",
-    "bestSellersSubtitle": "Beliebte Favoriten unserer Kundinnen und Kunden.",
+    "bestSellersSubtitle": "Beliebte Favoriten unserer Kunden.",
     "seeAll": "Alle anzeigen",
     "addToCart": "In den Warenkorb",
     "details": "Details",
-    "categories": "Unsere Kategorien",
-    "categoriesSubtitle": "Wähle eine Kategorie und starte deine Bestellung in wenigen Sekunden.",
-    "catBubbleTea": "Bubble Tea",
-    "catBubbleTeaDesc": "Milchtee, fruchtiger Tee und Toppings — frisch und süß.",
-    "catCoffee": "Kaffee",
-    "catCoffeeDesc": "Espresso, Latte und Eiskaffee für deinen täglichen Kick.",
-    "catChicken": "Hähnchen",
-    "catChickenDesc": "Knusprige Hähnchenstücke und leckere Street-Food-Gerichte.",
+    "categories": "Kategorien",
+    "categoriesSubtitle": "Wählen Sie eine Kategorie und bestellen Sie sofort.",
     "explore": "Entdecken",
     "brand": "Milk Tea Restaurant",
-    "categoryCardHint": "Entdecke diese Kategorie und finde die heutigen Favoriten.",
+    "categoryCardHint": "Entdecken Sie diese Kategorie.",
     "noBestSellers": "Noch keine Bestseller vorhanden.",
     "noCategories": "Keine Kategorien gefunden.",
     "categoryLabel": "Kategorie",
     "addedToCart": "Hinzugefügt"
   },
+
   "menu": {
     "title": "Speisekarte",
-    "subtitle": "Wähle eine Kategorie und bestelle in wenigen Sekunden.",
+    "subtitle": "Wählen Sie Ihre Lieblingsgerichte und bestellen Sie schnell.",
     "tabAll": "Alle",
     "searchPlaceholder": "Getränke oder Snacks suchen…",
     "search": "Suchen",
@@ -72,18 +69,19 @@
     "details": "Details",
     "category": "Kategorie",
     "emptyTitle": "Keine Artikel gefunden",
-    "emptySubtitle": "Versuche eine andere Suche oder setze die Filter zurück.",
+    "emptySubtitle": "Versuchen Sie eine andere Suche oder setzen Sie Filter zurück.",
     "reset": "Filter zurücksetzen",
     "bestSeller": "Bestseller",
     "addedToCart": "Hinzugefügt"
   },
+
   "cart": {
     "title": "Warenkorb",
     "subtitle": "Überprüfen Sie Ihre Bestellung vor dem Bezahlen.",
     "continueShopping": "Weiter einkaufen",
     "clearCart": "Warenkorb leeren",
     "emptyTitle": "Ihr Warenkorb ist leer",
-    "emptySubtitle": "Fügen Sie Getränke oder Snacks hinzu, um zu starten.",
+    "emptySubtitle": "Fügen Sie Artikel hinzu, um zu starten.",
     "browseMenu": "Speisekarte ansehen",
     "category": "Kategorie",
     "remove": "Entfernen",
@@ -95,70 +93,50 @@
     "decreaseQuantity": "Menge verringern",
     "increaseQuantity": "Menge erhöhen"
   },
+
   "checkout": {
     "title": "Kasse",
     "subtitle": "Überprüfen Sie Ihre Bestellung und schließen Sie den Kauf ab.",
     "emptyTitle": "Ihr Warenkorb ist leer",
-    "emptySubtitle": "Fügen Sie vor dem Bezahlen Getränke oder Snacks hinzu.",
+    "emptySubtitle": "Fügen Sie Artikel hinzu, bevor Sie bezahlen.",
     "browseMenu": "Speisekarte ansehen",
     "customerInfo": "Kundendaten",
     "fullName": "Vollständiger Name",
-    "phone": "Telefonnummer",
+    "phone": "Telefon",
     "address": "Adresse",
+    "notes": "Hinweise",
+    "notesPlaceholder": "Allergien oder Lieferhinweise?",
     "paymentMethod": "Zahlungsmethode",
     "paymentCash": "Barzahlung bei Lieferung",
     "paymentPaypal": "PayPal",
-    "paymentStripe": "Kreditkarte / Stripe",
+    "paymentStripe": "Karte / Stripe",
     "summary": "Bestellübersicht",
     "items": "{count} Artikel",
     "deliveryFee": "Liefergebühr",
     "total": "Gesamt",
     "placeOrder": "Bestellung aufgeben",
-    "placingOrder": "Bestellung wird aufgegeben...",
-    "backToCart": "Zurück zum Warenkorb",
-    "payNow": "Jetzt bezahlen",
-    "processingPayment": "Zahlung wird verarbeitet...",
-    "paypalNotReady": "PayPal ist noch nicht verfügbar.",
-    "errorEmptyCart": "Ihr Warenkorb ist leer.",
-    "errorRequiredFields": "Bitte füllen Sie alle Pflichtfelder aus.",
-    "errorCreateOrder": "Die Bestellung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
-    "stepDetails": "Bestellung erstellen",
-    "stepPayment": "Zahlung abschließen",
-    "continueToNextStep": "Weiter",
-    "step2Title": "Stripe-Zahlung abschließen",
-    "step2Subtitle": "Ihre Bestellung wurde erstellt. Schließen Sie die Zahlung unten ab.",
-    "orderId": "Bestellnummer",
-    "paymentIntentId": "Payment-Intent-ID",
-    "backToDetails": "Zurück zu den Daten"
+    "backToCart": "Zurück zum Warenkorb"
   },
-  "order": {
-    "title": "Bestellung bestätigt",
-    "subtitle": "Ihre Bestellung wurde erfolgreich erstellt.",
-    "paymentStatus": "Zahlungsstatus",
-    "orderStatus": "Bestellstatus",
-    "summary": "Bestellübersicht",
-    "total": "Gesamt",
-    "backToMenu": "Zur Speisekarte",
-    "backHome": "Zur Startseite",
-    "waitingForPayment": "Warten auf Zahlungsbestätigung",
-    "checkingPayment": "Zahlungsstatus wird geprüft...",
-    "statusLabels": {
-      "payment": {
-        "PENDING": "Ausstehend",
-        "PAID": "Bezahlt",
-        "FAILED": "Fehlgeschlagen",
-        "CANCELED": "Storniert",
-        "REFUNDED": "Erstattet"
-      },
-      "order": {
-        "NEW": "Neu",
-        "PREPARING": "In Vorbereitung",
-        "DONE": "Fertig",
-        "CANCELLED": "Abgebrochen"
-      }
-    },
-    "cartCleared": "Warenkorb nach erfolgreicher Zahlung geleert"
+
+  "account": {
+    "badge": "Mein Konto",
+    "title": "Kontoübersicht",
+    "subtitle": "Verwalten Sie Ihre Sitzung und greifen Sie schnell auf Bestellungen zu.",
+    "sessionTitle": "Sitzung",
+    "sessionSubtitle": "Sie sind angemeldet.",
+    "tokenLabel": "Access-Token",
+    "quickActions": "Schnellzugriffe",
+    "quickActionsSubtitle": "Schnell zurück zum Bestellen.",
+    "goToMenu": "Zur Speisekarte",
+    "goToCart": "Zum Warenkorb",
+    "goToCheckout": "Zur Kasse"
   },
+
+  "orders": {
+    "title": "Meine Bestellungen",
+    "subtitle": "Ihre Bestellhistorie wird hier angezeigt."
+  },
+
   "auth": {
     "fields": {
       "email": "E-Mail",
@@ -171,50 +149,37 @@
       "confirmPassword": "Passwort bestätigen"
     },
     "errors": {
-      "required": "Bitte füllen Sie alle Pflichtfelder aus.",
-      "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-      "registerFailed": "Konto konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
-      "passwordTooShort": "Das Passwort muss mindestens 8 Zeichen lang sein.",
-      "passwordsDoNotMatch": "Die Passwörter stimmen nicht überein.",
-      "acceptTerms": "Bitte akzeptieren Sie die Bedingungen, um fortzufahren."
+      "required": "Bitte alle Pflichtfelder ausfüllen.",
+      "loginFailed": "Anmeldung fehlgeschlagen.",
+      "registerFailed": "Registrierung fehlgeschlagen.",
+      "passwordTooShort": "Passwort muss mindestens 8 Zeichen lang sein.",
+      "passwordsDoNotMatch": "Passwörter stimmen nicht überein.",
+      "acceptTerms": "Bitte Bedingungen akzeptieren."
     },
     "login": {
       "badge": "Willkommen zurück",
-      "title": "Melden Sie sich in Ihrem Konto an",
-      "subtitle": "Greifen Sie schnell auf Ihr Profil und Ihre Bestellungen zu.",
-      "formTitle": "Anmelden",
-      "formSubtitle": "Verwenden Sie Ihre E-Mail und Ihr Passwort, um fortzufahren.",
+      "title": "Anmelden",
+      "subtitle": "Greifen Sie auf Ihr Konto zu",
+      "formTitle": "Login",
+      "formSubtitle": "Geben Sie Ihre Daten ein",
       "rememberMe": "Angemeldet bleiben",
       "forgotPassword": "Passwort vergessen?",
       "submit": "Anmelden",
       "signingIn": "Anmeldung läuft...",
       "footerText": "Noch kein Konto?",
-      "footerLink": "Jetzt registrieren"
+      "footerLink": "Registrieren"
     },
     "register": {
       "badge": "Konto erstellen",
-      "title": "Erstellen Sie Ihr Kundenkonto",
-      "subtitle": "Registrieren Sie sich, um Ihre Daten zu speichern und schneller zu bestellen.",
+      "title": "Registrieren",
+      "subtitle": "Erstellen Sie Ihr Konto",
       "formTitle": "Registrieren",
-      "formSubtitle": "Erstellen Sie Ihr Konto in einer Minute.",
-      "acceptTerms": "Ich stimme den Bedingungen und der Datenschutzerklärung zu.",
-      "submit": "Konto erstellen",
-      "creating": "Konto wird erstellt...",
-      "footerText": "Sie haben bereits ein Konto?",
-      "footerLink": "Jetzt anmelden"
+      "formSubtitle": "Schnelle Registrierung",
+      "acceptTerms": "Ich akzeptiere die Bedingungen",
+      "submit": "Registrieren",
+      "creating": "Wird erstellt...",
+      "footerText": "Schon ein Konto?",
+      "footerLink": "Anmelden"
     }
-  },
-  "account": {
-    "badge": "Mein Konto",
-    "title": "Kontoübersicht",
-    "subtitle": "Verwalten Sie Ihre Sitzung und greifen Sie schnell auf Ihre Bestellung zu.",
-    "sessionTitle": "Aktuelle Sitzung",
-    "sessionSubtitle": "Sie sind aktuell mit dem folgenden Access-Token angemeldet.",
-    "tokenLabel": "Access-Token",
-    "quickActions": "Schnellzugriffe",
-    "quickActionsSubtitle": "Springen Sie mit einem Klick zurück zum Bestellen.",
-    "goToMenu": "Zur Speisekarte",
-    "goToCart": "Zum Warenkorb",
-    "goToCheckout": "Zur Kasse"
   }
 }
