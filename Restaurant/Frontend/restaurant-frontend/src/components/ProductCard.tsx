@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
-import {formatPriceEUR} from "@/lib/api";
 import type {Product} from "@/types/product";
+import { formatPriceEUR } from "@/lib/http";
 
 type Props = {
   product: Product;

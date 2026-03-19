@@ -1,155 +1,91 @@
-import { getTranslations } from "next-intl/server";
+import {Suspense} from "react";
 import Link from "next/link";
-
-import { getProducts, getCategories } from "@/lib/api";
-import type { Product, Category } from "@/types/product";
-
-import ProductCard from "@/components/ProductCard";
+import {getTranslations} from "next-intl/server";
+import ProductCardSkeleton from "@/components/ProductCardSkeleton";
+import MenuGridSection from "./MenuGridSection";
 
 type Props = {
-  params: Promise<{ locale: string }>;
+  params: Promise<{locale: string}>;
   searchParams: Promise<{
     category?: string;
     search?: string;
   }>;
 };
 
-export default async function MenuPage({ params, searchParams }: Props) {
-  const { locale } = await params;
-  const { category, search } = await searchParams;
-
-  const t = await getTranslations("menu");
-
-  // Fetch server data
-  const [products, categories] = await Promise.all([
-    getProducts(),
-    getCategories()
-  ]);
-
-  // Filter by category
-  let filteredProducts: Product[] = products;
-
-  if (category) {
-    filteredProducts = filteredProducts.filter(
-      (p) => p.category.toLowerCase() === category.toLowerCase()
-    );
-  }
-
-  // Filter by search
-  if (search) {
-    const q = search.toLowerCase();
-
-    filteredProducts = filteredProducts.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        (p.description?.toLowerCase().includes(q) ?? false)
-    );
-  }
-
+function MenuGridFallback() {
   return (
-    <main className="mx-auto max-w-6xl space-y-10 px-4 pb-24 pt-8">
-
-      {/* PAGE HEADER */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-extrabold text-gray-900">
-          {t("title")}
-        </h1>
-
-        <p className="text-gray-600">
-          {t("subtitle")}
-        </p>
-      </div>
-
-      {/* CATEGORY FILTER */}
-      <div className="flex flex-wrap gap-2">
-        <Link
-          href={`/${locale}/menu`}
-          className={`rounded-xl border px-4 py-2 text-sm font-semibold ${!category
-            ? "bg-blue-600 text-white"
-            : "text-gray-700 hover:bg-gray-50"
-            }`}
-        >
-          {t("tabAll")}
-        </Link>
-
-        {(categories as Category[]).map((c) => (
-          <Link
-            key={c}
-            href={`/${locale}/menu?category=${encodeURIComponent(c)}`}
-            className={`rounded-xl border px-4 py-2 text-sm font-semibold ${category === c
-              ? "bg-blue-600 text-white"
-              : "text-gray-700 hover:bg-gray-50"
-              }`}
-          >
-            {c}
-          </Link>
+    <>
+      <div className="flex gap-2">
+        {Array.from({length: 4}).map((_, i) => (
+          <div
+            key={i}
+            className="h-10 w-24 rounded-xl bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.6s_infinite]"
+          />
         ))}
       </div>
 
-      {/* SEARCH */}
-      <form
-        action={`/${locale}/menu`}
-        method="GET"
-        className="flex gap-2"
-      >
-        <input
-          name="search"
-          defaultValue={search}
-          placeholder={t("searchPlaceholder")}
-          className="w-full rounded-xl border px-4 py-2"
-        />
+      <div className="h-4 w-24 rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.6s_infinite]" />
 
-        {category && (
-          <input type="hidden" name="category" value={category} />
-        )}
-
-        <button
-          type="submit"
-          className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
-        >
-          {t("search")}
-        </button>
-      </form>
-
-      {/* RESULT COUNT */}
-      <div className="text-sm text-gray-500">
-        {t("results", { count: filteredProducts.length })}
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({length: 6}).map((_, index) => (
+          <ProductCardSkeleton key={index} />
+        ))}
       </div>
+    </>
+  );
+}
 
-      {/* PRODUCT GRID */}
-      {filteredProducts.length > 0 ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              locale={locale}
-              addToCartLabel={t("addToCart")}
-              addedLabel={t("addedToCart")}
-              detailsLabel={t("details")}
-              bestSellerLabel={t("bestSeller")}
-              categoryLabel={t("category")}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-3xl border bg-white p-10 text-center">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {t("emptyTitle")}
-          </h3>
+export default async function MenuPage({params, searchParams}: Props) {
+  const {locale} = await params;
+  const {category, search} = await searchParams;
+  const t = await getTranslations("menu");
 
-          <p className="mt-2 text-gray-600">
-            {t("emptySubtitle")}
-          </p>
+  return (
+    <main className="mx-auto max-w-6xl space-y-8 px-4 pb-24 pt-8">
+      <section className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900">{t("title")}</h1>
+            <p className="mt-1 text-gray-600">{t("subtitle")}</p>
+          </div>
 
           <Link
-            href={`/${locale}/menu`}
-            className="mt-4 inline-block rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+            href={`/${locale}/cart`}
+            className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
           >
-            {t("reset")}
+            {t("goToCart")} →
           </Link>
         </div>
-      )}
+
+        <form action={`/${locale}/menu`} className="flex gap-2">
+          <input
+            name="search"
+            defaultValue={search}
+            placeholder={t("searchPlaceholder")}
+            className="w-full rounded-xl border px-4 py-2"
+          />
+
+          {category ? <input type="hidden" name="category" value={category} /> : null}
+
+          <button
+            type="submit"
+            className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+          >
+            {t("search")}
+          </button>
+        </form>
+      </section>
+
+      <Suspense
+        key={`${category ?? "all"}-${search ?? ""}`}
+        fallback={<MenuGridFallback />}
+      >
+        <MenuGridSection
+          locale={locale}
+          categoryParam={category}
+          searchParam={search}
+        />
+      </Suspense>
     </main>
   );
 }

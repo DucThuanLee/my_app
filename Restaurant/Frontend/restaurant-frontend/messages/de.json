@@ -89,8 +89,8 @@
     "decreaseQuantity": "Menge verringern",
     "increaseQuantity": "Menge erhöhen"
   },
-  "checkout": {
-    "title": "Kasse",
+"checkout": {
+  "title": "Kasse",
     "subtitle": "Überprüfen Sie Ihre Bestellung und schließen Sie den Kauf ab.",
     "emptyTitle": "Ihr Warenkorb ist leer",
     "emptySubtitle": "Fügen Sie vor dem Bezahlen Getränke oder Snacks hinzu.",
@@ -98,10 +98,7 @@
     "customerInfo": "Kundendaten",
     "fullName": "Vollständiger Name",
     "phone": "Telefonnummer",
-    "email": "E-Mail",
     "address": "Adresse",
-    "notes": "Bestellhinweise",
-    "notesPlaceholder": "Allergien, Wünsche oder Lieferhinweise?",
     "paymentMethod": "Zahlungsmethode",
     "paymentCash": "Barzahlung bei Lieferung",
     "paymentPaypal": "PayPal",
@@ -111,6 +108,49 @@
     "deliveryFee": "Liefergebühr",
     "total": "Gesamt",
     "placeOrder": "Bestellung aufgeben",
-    "backToCart": "Zurück zum Warenkorb"
+    "placingOrder": "Bestellung wird aufgegeben...",
+    "backToCart": "Zurück zum Warenkorb",
+    "payNow": "Jetzt bezahlen",
+    "processingPayment": "Zahlung wird verarbeitet...",
+    "paypalNotReady": "PayPal ist noch nicht verfügbar.",
+    "errorEmptyCart": "Ihr Warenkorb ist leer.",
+    "errorRequiredFields": "Bitte füllen Sie alle Pflichtfelder aus.",
+    "errorCreateOrder": "Die Bestellung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+    "stepDetails": "Bestellung erstellen",
+    "stepPayment": "Zahlung abschließen",
+    "continueToNextStep": "Weiter",
+    "step2Title": "Stripe-Zahlung abschließen",
+    "step2Subtitle": "Ihre Bestellung wurde erstellt. Schließen Sie die Zahlung unten ab.",
+    "orderId": "Bestellnummer",
+    "paymentIntentId": "Payment-Intent-ID",
+    "backToDetails": "Zurück zu den Daten"
+  },
+  "order": {
+"title": "Bestellung bestätigt",
+    "subtitle": "Ihre Bestellung wurde erfolgreich erstellt.",
+    "paymentStatus": "Zahlungsstatus",
+    "orderStatus": "Bestellstatus",
+    "summary": "Bestellübersicht",
+    "total": "Gesamt",
+    "backToMenu": "Zur Speisekarte",
+    "backHome": "Zur Startseite",
+    "waitingForPayment": "Warten auf Zahlungsbestätigung",
+    "checkingPayment": "Zahlungsstatus wird geprüft...",
+    "statusLabels": {
+      "payment": {
+        "PENDING": "Ausstehend",
+        "PAID": "Bezahlt",
+        "FAILED": "Fehlgeschlagen",
+        "CANCELED": "Storniert",
+        "REFUNDED": "Erstattet"
+      },
+      "order": {
+        "NEW": "Neu",
+        "PREPARING": "In Vorbereitung",
+        "DONE": "Fertig",
+        "CANCELLED": "Abgebrochen"
+      }
+    },
+    "cartCleared": "Warenkorb nach erfolgreicher Zahlung geleert"
   }
 }

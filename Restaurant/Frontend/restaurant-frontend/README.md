@@ -12,6 +12,23 @@ yarn dev
 pnpm dev
 # or
 bun dev
+
+# delete cache
+rm -rf .next
+pkill -f "next dev" || true
+npm run dev
+
+# find text
+grep -R "@/lib/api" src
+
+# install Stripe frontend
+npm install @stripe/stripe-js @stripe/react-stripe-js
+
+Enter 4242 4242 4242 4242
+
+• Expiry 12/34
+
+• CVC 123
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

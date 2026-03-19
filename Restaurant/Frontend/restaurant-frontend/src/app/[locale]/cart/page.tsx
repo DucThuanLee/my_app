@@ -3,8 +3,8 @@
 import Link from "next/link";
 import {useParams} from "next/navigation";
 import {useTranslations} from "next-intl";
-import {formatPriceEUR} from "@/lib/api";
 import {useCartStore} from "@/stores/cart-store";
+import { formatPriceEUR } from "@/lib/http";
 
 /**
  * Cart page (Client Component).

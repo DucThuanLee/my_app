@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-import { getBestSellers, getCategories, formatPriceEUR } from "@/lib/api";
 import type { Category, Product } from "@/types/product";
 
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductCard from "@/components/ProductCard";
+import { getBestSellers, getCategories } from "@/lib/product-api";
+import { formatPriceEUR } from "@/lib/http";
 
 /**
  * Pick an emoji for a given category key.

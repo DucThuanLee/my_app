@@ -1,8 +1,8 @@
 import Link from "next/link";
 import {getTranslations} from "next-intl/server";
-import {getCategories, getProducts} from "@/lib/api";
 import type {Category, Product} from "@/types/product";
 import ProductCard from "@/components/ProductCard";
+import { getCategories, getProducts } from "@/lib/product-api";
 
 function validateCategory(input: string | undefined, categories: Category[]): Category | undefined {
   const value = (input ?? "").trim();

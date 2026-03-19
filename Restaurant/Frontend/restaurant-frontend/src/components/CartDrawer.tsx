@@ -3,8 +3,9 @@
 import Link from "next/link";
 import {useEffect, useMemo, useState} from "react";
 import {createPortal} from "react-dom";
-import {formatPriceEUR} from "@/lib/api";
+
 import {useCartStore} from "@/stores/cart-store";
+import { formatPriceEUR } from "@/lib/http";
 
 type Props = {
   locale: string;

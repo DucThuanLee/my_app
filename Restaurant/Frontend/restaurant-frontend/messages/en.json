@@ -6,7 +6,16 @@
     "navMenu": "Menu",
     "orderNow": "Order now",
     "cart": "Cart",
-    "goToCart": "Go to cart"
+    "goToCart": "Go to cart",
+    "cartEmptyTitle": "Your cart is empty",
+    "cartEmptySubtitle": "Add some drinks or snacks to get started.",
+    "clearCart": "Clear cart",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "decreaseQuantity": "Decrease quantity",
+    "increaseQuantity": "Increase quantity"
   },
   "home": {
     "badge": "Fresh • Fast • Local",
@@ -79,5 +88,69 @@
     "goToCheckout": "Go to checkout",
     "decreaseQuantity": "Decrease quantity",
     "increaseQuantity": "Increase quantity"
+  },
+  "checkout": {
+   "title": "Checkout",
+    "subtitle": "Review your order and complete your purchase.",
+    "emptyTitle": "Your cart is empty",
+    "emptySubtitle": "Add some drinks or snacks before checkout.",
+    "browseMenu": "Browse menu",
+    "customerInfo": "Customer information",
+    "fullName": "Full name",
+    "phone": "Phone number",
+    "address": "Address",
+    "paymentMethod": "Payment method",
+    "paymentCash": "Cash on delivery",
+    "paymentPaypal": "PayPal",
+    "paymentStripe": "Credit card / Stripe",
+    "summary": "Order summary",
+    "items": "{count} items",
+    "deliveryFee": "Delivery fee",
+    "total": "Total",
+    "placeOrder": "Place order",
+    "placingOrder": "Placing order...",
+    "backToCart": "Back to cart",
+    "payNow": "Pay now",
+    "processingPayment": "Processing payment...",
+    "paypalNotReady": "PayPal is not ready yet.",
+    "errorEmptyCart": "Your cart is empty.",
+    "errorRequiredFields": "Please fill in all required fields.",
+    "errorCreateOrder": "Could not create your order. Please try again.",
+    "stepDetails": "Create order",
+    "stepPayment": "Complete payment",
+    "continueToNextStep": "Continue",
+    "step2Title": "Complete your Stripe payment",
+    "step2Subtitle": "Your order has been created. Complete the payment below.",
+    "orderId": "Order ID",
+    "paymentIntentId": "Payment Intent ID",
+    "backToDetails": "Back to details"
+  },
+  "order": {
+    "title": "Order confirmed",
+    "subtitle": "Your order has been created successfully.",
+    "paymentStatus": "Payment status",
+    "orderStatus": "Order status",
+    "summary": "Order summary",
+    "total": "Total",
+    "backToMenu": "Back to menu",
+    "backHome": "Back to home",
+    "waitingForPayment": "Waiting for payment confirmation",
+    "checkingPayment": "Checking payment status...",
+    "statusLabels": {
+      "payment": {
+        "PENDING": "Pending",
+        "PAID": "Paid",
+        "FAILED": "Failed",
+        "CANCELED": "Canceled",
+        "REFUNDED": "Refunded"
+      },
+      "order": {
+        "NEW": "New",
+        "PREPARING": "Preparing",
+        "DONE": "Done",
+        "CANCELLED": "Cancelled"
+      }
+    },
+    "cartCleared": "Cart cleared after successful payment"
   }
 }

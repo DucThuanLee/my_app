@@ -7,16 +7,19 @@ import type {Product} from "@/types/product";
 
 type CartState = {
   items: CartItem[];
+  lastClearedOrderId: string | null;
   addItem: (product: Product) => void;
   decreaseItem: (productId: string) => void;
   removeItem: (productId: string) => void;
   clearCart: () => void;
+  markOrderCartCleared: (orderId: string) => void;
 };
 
 export const useCartStore = create<CartState>()(
   persist(
     (set) => ({
       items: [],
+      lastClearedOrderId: null,
 
       addItem: (product) =>
         set((state) => {
@@ -63,7 +66,13 @@ export const useCartStore = create<CartState>()(
           items: state.items.filter((i) => i.product.id !== productId)
         })),
 
-      clearCart: () => set({items: []})
+      clearCart: () => set({items: []}),
+
+      markOrderCartCleared: (orderId) =>
+        set({
+          items: [],
+          lastClearedOrderId: orderId
+        })
     }),
     {
       name: "restaurant-cart"

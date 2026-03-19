@@ -1,17 +1,17 @@
-import { Product } from './product';
+import type {Product} from "./product";
 
 export enum OrderStatus {
-  NEW = 'NEW',
-  PREPARING = 'PREPARING',
-  DONE = 'DONE',
-  CANCELLED = 'CANCELLED'
+  NEW = "NEW",
+  PREPARING = "PREPARING",
+  DONE = "DONE",
+  CANCELLED = "CANCELLED"
 }
 
 export enum PaymentStatus {
   PENDING = "PENDING",
   PAID = "PAID",
   FAILED = "FAILED",
-  CANCELED = "CANCELED", // ✅ add
+  CANCELED = "CANCELED",
   REFUNDED = "REFUNDED"
 }
 
@@ -22,8 +22,8 @@ export enum PaymentMethod {
 }
 
 export interface OrderItem {
-  id: string;
   productId: string;
+  productName: string;
   quantity: number;
   price: number;
   product?: Product;
@@ -31,16 +31,12 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
-  userId?: string;
-  customerName: string;
-  phone: string;
-  address: string;
   totalPrice: number;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
-  items: OrderItem[];
   createdAt: string;
+  items: OrderItem[];
 }
 
 export interface CreateOrderRequest {
