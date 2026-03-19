@@ -5,6 +5,8 @@
     "navHome": "Startseite",
     "navMenu": "Speisekarte",
     "orderNow": "Jetzt bestellen",
+    "login": "Anmelden",
+    "register": "Registrieren",
     "cart": "Warenkorb",
     "goToCart": "Zum Warenkorb",
     "cartEmptyTitle": "Ihr Warenkorb ist leer",
@@ -15,7 +17,11 @@
     "checkout": "Zur Kasse",
     "remove": "Entfernen",
     "decreaseQuantity": "Menge verringern",
-    "increaseQuantity": "Menge erhöhen"
+    "increaseQuantity": "Menge erhöhen",
+    "imprint": "Impressum",
+    "privacy": "Datenschutz",
+    "account": "Konto",
+    "logout": "Abmelden"
   },
   "home": {
     "badge": "Frisch • Schnell • Lokal",
@@ -89,8 +95,8 @@
     "decreaseQuantity": "Menge verringern",
     "increaseQuantity": "Menge erhöhen"
   },
-"checkout": {
-  "title": "Kasse",
+  "checkout": {
+    "title": "Kasse",
     "subtitle": "Überprüfen Sie Ihre Bestellung und schließen Sie den Kauf ab.",
     "emptyTitle": "Ihr Warenkorb ist leer",
     "emptySubtitle": "Fügen Sie vor dem Bezahlen Getränke oder Snacks hinzu.",
@@ -126,7 +132,7 @@
     "backToDetails": "Zurück zu den Daten"
   },
   "order": {
-"title": "Bestellung bestätigt",
+    "title": "Bestellung bestätigt",
     "subtitle": "Ihre Bestellung wurde erfolgreich erstellt.",
     "paymentStatus": "Zahlungsstatus",
     "orderStatus": "Bestellstatus",
