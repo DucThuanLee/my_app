@@ -6,8 +6,10 @@ import {persist} from "zustand/middleware";
 type AuthState = {
   accessToken: string | null;
   isAuthenticated: boolean;
+  hydrated: boolean;
   setAccessToken: (token: string) => void;
   logout: () => void;
+  setHydrated: (value: boolean) => void;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -15,6 +17,7 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       accessToken: null,
       isAuthenticated: false,
+      hydrated: false,
 
       setAccessToken: (token) =>
         set({
@@ -26,10 +29,18 @@ export const useAuthStore = create<AuthState>()(
         set({
           accessToken: null,
           isAuthenticated: false
+        }),
+
+      setHydrated: (value) =>
+        set({
+          hydrated: value
         })
     }),
     {
-      name: "restaurant-auth"
+      name: "restaurant-auth",
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true);
+      }
     }
   )
 );

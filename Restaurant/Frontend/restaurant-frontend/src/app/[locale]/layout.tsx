@@ -77,19 +77,13 @@ export default async function LocaleLayout({
             <div className="flex items-center gap-2">
               <LanguageSwitcher locale={locale} />
 
-              <Link
-                href={`/${locale}/login`}
-                className="hidden rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-blue-50 md:inline-flex"
-              >
-                {t("login")}
-              </Link>
-
-              <Link
-                href={`/${locale}/register`}
-                className="hidden rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 md:inline-flex"
-              >
-                {t("register")}
-              </Link>
+              <HeaderAuthActions
+                locale={locale}
+                loginLabel={t("login")}
+                registerLabel={t("register")}
+                logoutLabel={t("logout")}
+                accountLabel={t("account")}
+              />
 
               <CartDrawer
                 locale={locale}

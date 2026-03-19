@@ -21,13 +21,24 @@ export default function HeaderAuthActions({
   accountLabel
 }: Props) {
   const router = useRouter();
+
+  const hydrated = useAuthStore((state) => state.hydrated);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const logout = useAuthStore((state) => state.logout);
-
+  console.log("auth hydrated", hydrated, "isAuthenticated", isAuthenticated);
   function handleLogout() {
     clearAccessToken();
     logout();
     router.push(`/${locale}`);
+    router.refresh();
+  }
+  if (!hydrated) {
+    return (
+      <div className="hidden md:flex items-center gap-2">
+        <div className="h-10 w-20 rounded-xl bg-gray-100" />
+        <div className="h-10 w-24 rounded-xl bg-gray-100" />
+      </div>
+    );
   }
 
   if (!isAuthenticated) {

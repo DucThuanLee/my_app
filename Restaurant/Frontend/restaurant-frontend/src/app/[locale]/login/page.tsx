@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import {useState} from "react";
-import {useParams, useRouter} from "next/navigation";
+import {useParams, useRouter, useSearchParams} from "next/navigation";
 import {useTranslations} from "next-intl";
+
 import AuthShell from "@/components/AuthShell";
 import {login} from "@/lib/auth-api";
 import {saveAccessToken} from "@/lib/auth-storage";
@@ -12,36 +13,48 @@ import {useAuthStore} from "@/stores/auth-store";
 export default function LoginPage() {
   const {locale} = useParams<{locale: string}>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("auth");
+
+  const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const setAccessToken = useAuthStore((state) => state.setAccessToken);
+
+  // 🔥 support redirect after login
+  const redirect = searchParams.get("redirect");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErrorMessage("");
-  
+
     if (!email.trim() || !password.trim()) {
       setErrorMessage(t("errors.required"));
       return;
     }
-  
+
     try {
       setSubmitting(true);
-  
+
       const result = await login({
         email: email.trim(),
         password
       });
-  
+
+      // ✅ save token
       saveAccessToken(result.accessToken);
       setAccessToken(result.accessToken);
-  
-      router.push(`/${locale}`);
+
+      console.log("Login success:", result.accessToken);
+
+      // ✅ redirect logic
+      const target = redirect ? `/${locale}${redirect}` : `/${locale}`;
+
+      router.push(target);
+      //router.refresh(); // 🔥 force header update
     } catch (error) {
       console.error(error);
       setErrorMessage(t("errors.loginFailed"));
@@ -60,14 +73,19 @@ export default function LoginPage() {
       footerLinkLabel={t("login.footerLink")}
       footerHref="/register"
     >
+      {/* Title */}
       <div className="space-y-2">
         <h2 className="text-2xl font-extrabold text-gray-900">
           {t("login.formTitle")}
         </h2>
-        <p className="text-sm text-gray-600">{t("login.formSubtitle")}</p>
+        <p className="text-sm text-gray-600">
+          {t("login.formSubtitle")}
+        </p>
       </div>
 
+      {/* Form */}
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        {/* Email */}
         <div>
           <label className="mb-2 block text-sm font-semibold text-gray-700">
             {t("fields.email")}
@@ -81,6 +99,7 @@ export default function LoginPage() {
           />
         </div>
 
+        {/* Password */}
         <div>
           <label className="mb-2 block text-sm font-semibold text-gray-700">
             {t("fields.password")}
@@ -94,6 +113,7 @@ export default function LoginPage() {
           />
         </div>
 
+        {/* Remember + Forgot */}
         <div className="flex items-center justify-between gap-4 text-sm">
           <label className="inline-flex items-center gap-2 text-gray-600">
             <input
@@ -112,12 +132,14 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {errorMessage ? (
+        {/* Error */}
+        {errorMessage && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {errorMessage}
           </div>
-        ) : null}
+        )}
 
+        {/* Submit */}
         <button
           type="submit"
           disabled={submitting}
