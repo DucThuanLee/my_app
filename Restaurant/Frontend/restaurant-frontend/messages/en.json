@@ -24,7 +24,6 @@
     "imprint": "Imprint",
     "privacy": "Privacy"
   },
-
   "home": {
     "badge": "Fresh • Fast • Local",
     "badge2": "Made with love",
@@ -54,7 +53,6 @@
     "categoryLabel": "Category",
     "addedToCart": "Added"
   },
-
   "menu": {
     "title": "Menu",
     "subtitle": "Choose your favorites.",
@@ -73,7 +71,6 @@
     "bestSeller": "Best seller",
     "addedToCart": "Added"
   },
-
   "cart": {
     "title": "Cart",
     "subtitle": "Review your order.",
@@ -92,7 +89,6 @@
     "decreaseQuantity": "Decrease quantity",
     "increaseQuantity": "Increase quantity"
   },
-
   "checkout": {
     "title": "Checkout",
     "subtitle": "Review and complete your order.",
@@ -128,9 +124,13 @@
     "step2Subtitle": "Complete your payment",
     "orderId": "Order ID",
     "paymentIntentId": "Payment Intent ID",
-    "backToDetails": "Back"
+    "backToDetails": "Back",
+    "signedInAsLabel": "Signed in as",
+    "guestCheckoutText": "Checking out as a guest?",
+    "guestCheckoutLogin": "Sign in",
+    "customerInfoLoggedInHint": "This order will be linked to your signed-in account.",
+    "customerInfoGuestHint": "You can continue without an account."
   },
-
   "account": {
     "badge": "My account",
     "title": "Account overview",
@@ -146,53 +146,52 @@
     "goToCart": "Cart",
     "goToCheckout": "Checkout"
   },
-"orders": {
-  "badge": "My orders",
-  "title": "Order history",
-  "subtitle": "Track your active and previous orders in one place.",
-  "emptyTitle": "No orders yet",
-  "emptySubtitle": "Once you place an order, it will appear here.",
-  "errorTitle": "Could not load orders",
-  "loadError": "We could not load your order history right now.",
-  "refreshing": "Refreshing...",
-  "goToMenu": "Go to menu",
-  "goToAccount": "Back to account",
-  "orderNumber": "Order number",
-  "placedAt": "Placed at",
-  "total": "Total",
-  "items": "Items",
-  "viewOrder": "View order",
-  "reorder": "Order again",
-  "filterStatus": "Status",
-  "allStatuses": "All statuses",
-  "sortBy": "Sort by",
-  "sortDirection": "Direction",
-  "sortCreatedAt": "Created date",
-  "sortTotalPrice": "Total price",
-  "sortAsc": "Ascending",
-  "sortDesc": "Descending",
-  "resultsCount": "{count} orders",
-  "progressNew": "New",
-  "progressPreparing": "Preparing",
-  "progressDone": "Done",
-  "previousPage": "Previous",
-  "nextPage": "Next",
-  "pageIndicator": "Page {page} of {totalPages}",
-  "paymentStatusLabels": {
-    "PENDING": "Payment pending",
-    "PAID": "Paid",
-    "FAILED": "Payment failed",
-    "CANCELED": "Canceled",
-    "REFUNDED": "Refunded"
+  "orders": {
+    "badge": "My orders",
+    "title": "Order history",
+    "subtitle": "Track your active and previous orders in one place.",
+    "emptyTitle": "No orders yet",
+    "emptySubtitle": "Once you place an order, it will appear here.",
+    "errorTitle": "Could not load orders",
+    "loadError": "We could not load your order history right now.",
+    "refreshing": "Refreshing...",
+    "goToMenu": "Go to menu",
+    "goToAccount": "Back to account",
+    "orderNumber": "Order number",
+    "placedAt": "Placed at",
+    "total": "Total",
+    "items": "Items",
+    "viewOrder": "View order",
+    "reorder": "Order again",
+    "filterStatus": "Status",
+    "allStatuses": "All statuses",
+    "sortBy": "Sort by",
+    "sortDirection": "Direction",
+    "sortCreatedAt": "Created date",
+    "sortTotalPrice": "Total price",
+    "sortAsc": "Ascending",
+    "sortDesc": "Descending",
+    "resultsCount": "{count} orders",
+    "progressNew": "New",
+    "progressPreparing": "Preparing",
+    "progressDone": "Done",
+    "previousPage": "Previous",
+    "nextPage": "Next",
+    "pageIndicator": "Page {page} of {totalPages}",
+    "paymentStatusLabels": {
+      "PENDING": "Payment pending",
+      "PAID": "Paid",
+      "FAILED": "Payment failed",
+      "CANCELED": "Canceled",
+      "REFUNDED": "Refunded"
+    },
+    "orderStatusLabels": {
+      "NEW": "New",
+      "PREPARING": "Preparing",
+      "DONE": "Done",
+      "CANCELLED": "Cancelled"
+    }
   },
-  "orderStatusLabels": {
-    "NEW": "New",
-    "PREPARING": "Preparing",
-    "DONE": "Done",
-    "CANCELLED": "Cancelled"
-  }
-},
-
   "order": {
     "title": "Order confirmed",
     "subtitle": "Your order has been created successfully.",
@@ -221,7 +220,7 @@
       }
     }
   },
-"auth": {
+  "auth": {
     "fields": {
       "email": "Email",
       "password": "Password",

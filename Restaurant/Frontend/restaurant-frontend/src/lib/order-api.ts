@@ -7,9 +7,9 @@ export async function createOrder(payload: CreateOrderRequest): Promise<Order> {
 
   const res = await fetch(url.toString(), {
     method: "POST",
-    headers: {
+    headers: buildAuthHeaders({
       "Content-Type": "application/json"
-    },
+    }),
     body: JSON.stringify(payload)
   });
 

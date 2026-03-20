@@ -8,8 +8,10 @@ import {useTranslations} from "next-intl";
 import {formatPriceEUR} from "@/lib/http";
 import {createOrder} from "@/lib/order-api";
 import {createStripeIntent} from "@/lib/payment-api";
+import {getEmailFromToken} from "@/lib/jwt";
 
 import {useCartStore} from "@/stores/cart-store";
+import {useAuthStore} from "@/stores/auth-store";
 import {PaymentMethod} from "@/types/order";
 import type {CreateOrderRequest} from "@/types/order";
 
@@ -26,6 +28,10 @@ export default function CheckoutPage() {
 
   const items = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clearCart);
+
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const signedInEmail = getEmailFromToken(accessToken);
 
   const [step, setStep] = useState<CheckoutStep>("DETAILS");
 
@@ -167,12 +173,39 @@ export default function CheckoutPage() {
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           {step === "DETAILS" ? (
             <form onSubmit={handleCreateOrder} className="contents">
-              <section className="rounded-3xl border bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-extrabold text-gray-900">
-                  {t("customerInfo")}
-                </h2>
+              <section className="space-y-4 rounded-3xl border bg-white p-6 shadow-sm">
+                {isAuthenticated && signedInEmail ? (
+                  <div className="rounded-2xl border bg-blue-50 px-4 py-3 text-sm text-gray-700">
+                    <span className="font-semibold text-blue-700">
+                      {t("signedInAsLabel")}
+                    </span>{" "}
+                    <span className="break-all">{signedInEmail}</span>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border bg-white px-4 py-3 text-sm text-gray-700">
+                    {t("guestCheckoutText")}{" "}
+                    <Link
+                      href={`/${locale}/login?redirect=/checkout`}
+                      className="font-semibold text-blue-700 hover:underline"
+                    >
+                      {t("guestCheckoutLogin")}
+                    </Link>
+                  </div>
+                )}
 
-                <div className="mt-5 grid gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-gray-900">
+                    {t("customerInfo")}
+                  </h2>
+
+                  <p className="mt-2 text-sm text-gray-600">
+                    {isAuthenticated
+                      ? t("customerInfoLoggedInHint")
+                      : t("customerInfoGuestHint")}
+                  </p>
+                </div>
+
+                <div className="grid gap-4">
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-gray-700">
                       {t("fullName")}
@@ -214,7 +247,7 @@ export default function CheckoutPage() {
                   {t("paymentMethod")}
                 </h2>
 
-                <div className="mt-4 grid gap-3">
+                <div className="grid gap-3">
                   <label className="flex items-center gap-3 rounded-2xl border p-4">
                     <input
                       type="radio"
@@ -253,7 +286,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {errorMessage ? (
-                  <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     {errorMessage}
                   </div>
                 ) : null}

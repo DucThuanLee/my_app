@@ -24,7 +24,6 @@
     "imprint": "Impressum",
     "privacy": "Datenschutz"
   },
-
   "home": {
     "badge": "Frisch • Schnell • Lokal",
     "badge2": "Mit Liebe gemacht",
@@ -54,7 +53,6 @@
     "categoryLabel": "Kategorie",
     "addedToCart": "Hinzugefügt"
   },
-
   "menu": {
     "title": "Speisekarte",
     "subtitle": "Wählen Sie Ihre Lieblingsgerichte.",
@@ -73,7 +71,6 @@
     "bestSeller": "Bestseller",
     "addedToCart": "Hinzugefügt"
   },
-
   "cart": {
     "title": "Warenkorb",
     "subtitle": "Überprüfen Sie Ihre Bestellung.",
@@ -92,7 +89,6 @@
     "decreaseQuantity": "Menge verringern",
     "increaseQuantity": "Menge erhöhen"
   },
-
   "checkout": {
     "title": "Kasse",
     "subtitle": "Bestellung überprüfen und bezahlen.",
@@ -128,9 +124,13 @@
     "step2Subtitle": "Zahlung abschließen",
     "orderId": "Bestellnummer",
     "paymentIntentId": "Payment-ID",
-    "backToDetails": "Zurück"
+    "backToDetails": "Zurück",
+    "signedInAsLabel": "Angemeldet als",
+    "guestCheckoutText": "Als Gast bestellen?",
+    "guestCheckoutLogin": "Anmelden",
+    "customerInfoLoggedInHint": "Diese Bestellung wird mit Ihrem angemeldeten Konto verknüpft.",
+    "customerInfoGuestHint": "Sie können auch ohne Konto fortfahren."
   },
-
   "account": {
     "badge": "Mein Konto",
     "title": "Kontoübersicht",
@@ -146,53 +146,52 @@
     "goToCart": "Warenkorb",
     "goToCheckout": "Zur Kasse"
   },
-"orders": {
-  "badge": "Meine Bestellungen",
-  "title": "Bestellverlauf",
-  "subtitle": "Verfolgen Sie Ihre aktuellen und vergangenen Bestellungen an einem Ort.",
-  "emptyTitle": "Noch keine Bestellungen",
-  "emptySubtitle": "Sobald Sie eine Bestellung aufgeben, erscheint sie hier.",
-  "errorTitle": "Bestellungen konnten nicht geladen werden",
-  "loadError": "Ihre Bestellhistorie konnte derzeit nicht geladen werden.",
-  "refreshing": "Wird aktualisiert...",
-  "goToMenu": "Zur Speisekarte",
-  "goToAccount": "Zurück zum Konto",
-  "orderNumber": "Bestellnummer",
-  "placedAt": "Bestellt am",
-  "total": "Gesamt",
-  "items": "Artikel",
-  "viewOrder": "Bestellung ansehen",
-  "reorder": "Erneut bestellen",
-  "filterStatus": "Status",
-  "allStatuses": "Alle Status",
-  "sortBy": "Sortieren nach",
-  "sortDirection": "Richtung",
-  "sortCreatedAt": "Erstelldatum",
-  "sortTotalPrice": "Gesamtpreis",
-  "sortAsc": "Aufsteigend",
-  "sortDesc": "Absteigend",
-  "resultsCount": "{count} Bestellungen",
-  "progressNew": "Neu",
-  "progressPreparing": "In Vorbereitung",
-  "progressDone": "Fertig",
-  "previousPage": "Zurück",
-  "nextPage": "Weiter",
-  "pageIndicator": "Seite {page} von {totalPages}",
-  "paymentStatusLabels": {
-    "PENDING": "Zahlung ausstehend",
-    "PAID": "Bezahlt",
-    "FAILED": "Zahlung fehlgeschlagen",
-    "CANCELED": "Storniert",
-    "REFUNDED": "Erstattet"
+  "orders": {
+    "badge": "Meine Bestellungen",
+    "title": "Bestellverlauf",
+    "subtitle": "Verfolgen Sie Ihre aktuellen und vergangenen Bestellungen an einem Ort.",
+    "emptyTitle": "Noch keine Bestellungen",
+    "emptySubtitle": "Sobald Sie eine Bestellung aufgeben, erscheint sie hier.",
+    "errorTitle": "Bestellungen konnten nicht geladen werden",
+    "loadError": "Ihre Bestellhistorie konnte derzeit nicht geladen werden.",
+    "refreshing": "Wird aktualisiert...",
+    "goToMenu": "Zur Speisekarte",
+    "goToAccount": "Zurück zum Konto",
+    "orderNumber": "Bestellnummer",
+    "placedAt": "Bestellt am",
+    "total": "Gesamt",
+    "items": "Artikel",
+    "viewOrder": "Bestellung ansehen",
+    "reorder": "Erneut bestellen",
+    "filterStatus": "Status",
+    "allStatuses": "Alle Status",
+    "sortBy": "Sortieren nach",
+    "sortDirection": "Richtung",
+    "sortCreatedAt": "Erstelldatum",
+    "sortTotalPrice": "Gesamtpreis",
+    "sortAsc": "Aufsteigend",
+    "sortDesc": "Absteigend",
+    "resultsCount": "{count} Bestellungen",
+    "progressNew": "Neu",
+    "progressPreparing": "In Vorbereitung",
+    "progressDone": "Fertig",
+    "previousPage": "Zurück",
+    "nextPage": "Weiter",
+    "pageIndicator": "Seite {page} von {totalPages}",
+    "paymentStatusLabels": {
+      "PENDING": "Zahlung ausstehend",
+      "PAID": "Bezahlt",
+      "FAILED": "Zahlung fehlgeschlagen",
+      "CANCELED": "Storniert",
+      "REFUNDED": "Erstattet"
+    },
+    "orderStatusLabels": {
+      "NEW": "Neu",
+      "PREPARING": "In Vorbereitung",
+      "DONE": "Fertig",
+      "CANCELLED": "Abgebrochen"
+    }
   },
-  "orderStatusLabels": {
-    "NEW": "Neu",
-    "PREPARING": "In Vorbereitung",
-    "DONE": "Fertig",
-    "CANCELLED": "Abgebrochen"
-  }
-},
-
   "order": {
     "title": "Bestellung bestätigt",
     "subtitle": "Ihre Bestellung wurde erfolgreich erstellt.",
@@ -221,49 +220,49 @@
       }
     }
   },
-"auth": {
-  "fields": {
-    "email": "E-Mail",
-    "password": "Passwort",
-    "confirmPassword": "Passwort bestätigen"
-  },
-  "placeholders": {
-    "email": "E-Mail eingeben",
-    "password": "Passwort eingeben",
-    "confirmPassword": "Passwort bestätigen"
-  },
-  "errors": {
-    "required": "Bitte füllen Sie alle Pflichtfelder aus.",
-    "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-    "registerFailed": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-    "passwordTooShort": "Das Passwort muss mindestens 8 Zeichen lang sein.",
-    "passwordsDoNotMatch": "Die Passwörter stimmen nicht überein.",
-    "acceptTerms": "Bitte akzeptieren Sie die Bedingungen, um fortzufahren."
-  },
-  "login": {
-    "badge": "Willkommen zurück",
-    "title": "Anmelden",
-    "subtitle": "Greifen Sie auf Ihr Konto und Ihre Bestellungen zu.",
-    "formTitle": "Login",
-    "formSubtitle": "Melden Sie sich mit E-Mail und Passwort an.",
-    "rememberMe": "Angemeldet bleiben",
-    "forgotPassword": "Passwort vergessen?",
-    "submit": "Anmelden",
-    "signingIn": "Anmeldung läuft...",
-    "footerText": "Noch kein Konto?",
-    "footerLink": "Registrieren"
-  },
-  "register": {
-    "badge": "Konto erstellen",
-    "title": "Registrieren",
-    "subtitle": "Erstellen Sie Ihr Konto für schnellere Bestellungen.",
-    "formTitle": "Registrieren",
-    "formSubtitle": "Erstellen Sie Ihr Konto in wenigen Sekunden.",
-    "acceptTerms": "Ich akzeptiere die Bedingungen und Datenschutzrichtlinie.",
-    "submit": "Registrieren",
-    "creating": "Konto wird erstellt...",
-    "footerText": "Sie haben bereits ein Konto?",
-    "footerLink": "Anmelden"
+  "auth": {
+    "fields": {
+      "email": "E-Mail",
+      "password": "Passwort",
+      "confirmPassword": "Passwort bestätigen"
+    },
+    "placeholders": {
+      "email": "E-Mail eingeben",
+      "password": "Passwort eingeben",
+      "confirmPassword": "Passwort bestätigen"
+    },
+    "errors": {
+      "required": "Bitte füllen Sie alle Pflichtfelder aus.",
+      "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "registerFailed": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "passwordTooShort": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+      "passwordsDoNotMatch": "Die Passwörter stimmen nicht überein.",
+      "acceptTerms": "Bitte akzeptieren Sie die Bedingungen, um fortzufahren."
+    },
+    "login": {
+      "badge": "Willkommen zurück",
+      "title": "Anmelden",
+      "subtitle": "Greifen Sie auf Ihr Konto und Ihre Bestellungen zu.",
+      "formTitle": "Login",
+      "formSubtitle": "Melden Sie sich mit E-Mail und Passwort an.",
+      "rememberMe": "Angemeldet bleiben",
+      "forgotPassword": "Passwort vergessen?",
+      "submit": "Anmelden",
+      "signingIn": "Anmeldung läuft...",
+      "footerText": "Noch kein Konto?",
+      "footerLink": "Registrieren"
+    },
+    "register": {
+      "badge": "Konto erstellen",
+      "title": "Registrieren",
+      "subtitle": "Erstellen Sie Ihr Konto für schnellere Bestellungen.",
+      "formTitle": "Registrieren",
+      "formSubtitle": "Erstellen Sie Ihr Konto in wenigen Sekunden.",
+      "acceptTerms": "Ich akzeptiere die Bedingungen und Datenschutzrichtlinie.",
+      "submit": "Registrieren",
+      "creating": "Konto wird erstellt...",
+      "footerText": "Sie haben bereits ein Konto?",
+      "footerLink": "Anmelden"
+    }
   }
-}
 }
