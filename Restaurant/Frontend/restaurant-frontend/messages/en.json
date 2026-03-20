@@ -146,35 +146,52 @@
     "goToCart": "Cart",
     "goToCheckout": "Checkout"
   },
-
-  "orders": {
-    "badge": "My orders",
-    "title": "Order history",
-    "subtitle": "All your orders.",
-    "emptyTitle": "No orders yet",
-    "emptySubtitle": "You haven’t ordered anything.",
-    "goToMenu": "Go to menu",
-    "goToAccount": "Back to account",
-    "orderNumber": "Order number",
-    "placedAt": "Placed at",
-    "total": "Total",
-    "items": "Items",
-    "viewOrder": "View",
-    "reorder": "Reorder",
-    "paymentStatusLabels": {
-      "PENDING": "Pending",
-      "PAID": "Paid",
-      "FAILED": "Failed",
-      "CANCELED": "Canceled",
-      "REFUNDED": "Refunded"
-    },
-    "orderStatusLabels": {
-      "NEW": "New",
-      "PREPARING": "Preparing",
-      "DONE": "Done",
-      "CANCELLED": "Cancelled"
-    }
+"orders": {
+  "badge": "My orders",
+  "title": "Order history",
+  "subtitle": "Track your active and previous orders in one place.",
+  "emptyTitle": "No orders yet",
+  "emptySubtitle": "Once you place an order, it will appear here.",
+  "errorTitle": "Could not load orders",
+  "loadError": "We could not load your order history right now.",
+  "refreshing": "Refreshing...",
+  "goToMenu": "Go to menu",
+  "goToAccount": "Back to account",
+  "orderNumber": "Order number",
+  "placedAt": "Placed at",
+  "total": "Total",
+  "items": "Items",
+  "viewOrder": "View order",
+  "reorder": "Order again",
+  "filterStatus": "Status",
+  "allStatuses": "All statuses",
+  "sortBy": "Sort by",
+  "sortDirection": "Direction",
+  "sortCreatedAt": "Created date",
+  "sortTotalPrice": "Total price",
+  "sortAsc": "Ascending",
+  "sortDesc": "Descending",
+  "resultsCount": "{count} orders",
+  "progressNew": "New",
+  "progressPreparing": "Preparing",
+  "progressDone": "Done",
+  "previousPage": "Previous",
+  "nextPage": "Next",
+  "pageIndicator": "Page {page} of {totalPages}",
+  "paymentStatusLabels": {
+    "PENDING": "Payment pending",
+    "PAID": "Paid",
+    "FAILED": "Payment failed",
+    "CANCELED": "Canceled",
+    "REFUNDED": "Refunded"
   },
+  "orderStatusLabels": {
+    "NEW": "New",
+    "PREPARING": "Preparing",
+    "DONE": "Done",
+    "CANCELLED": "Cancelled"
+  }
+},
 
   "order": {
     "title": "Order confirmed",
@@ -204,15 +221,49 @@
       }
     }
   },
-
-  "auth": {
+"auth": {
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password"
+    },
+    "placeholders": {
+      "email": "Enter your email",
+      "password": "Enter your password",
+      "confirmPassword": "Confirm your password"
+    },
+    "errors": {
+      "required": "Please fill in all required fields.",
+      "loginFailed": "Could not sign in. Please try again.",
+      "registerFailed": "Could not create your account. Please try again.",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "passwordsDoNotMatch": "Passwords do not match.",
+      "acceptTerms": "Please accept the terms to continue."
+    },
     "login": {
-      "title": "Login",
-      "submit": "Login"
+      "badge": "Welcome back",
+      "title": "Sign in",
+      "subtitle": "Access your account and your orders.",
+      "formTitle": "Login",
+      "formSubtitle": "Sign in with your email and password.",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign in",
+      "signingIn": "Signing in...",
+      "footerText": "Don’t have an account?",
+      "footerLink": "Register"
     },
     "register": {
+      "badge": "Create account",
       "title": "Register",
-      "submit": "Register"
+      "subtitle": "Create your account for faster ordering.",
+      "formTitle": "Register",
+      "formSubtitle": "Create your account in a few seconds.",
+      "acceptTerms": "I agree to the terms and privacy policy.",
+      "submit": "Register",
+      "creating": "Creating account...",
+      "footerText": "Already have an account?",
+      "footerLink": "Sign in"
     }
   }
 }

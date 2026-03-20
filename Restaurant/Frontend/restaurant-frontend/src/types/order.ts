@@ -1,5 +1,3 @@
-import type {Product} from "./product";
-
 export enum OrderStatus {
   NEW = "NEW",
   PREPARING = "PREPARING",
@@ -26,7 +24,6 @@ export interface OrderItem {
   productName: string;
   quantity: number;
   price: number;
-  product?: Product;
 }
 
 export interface Order {
@@ -48,4 +45,14 @@ export interface CreateOrderRequest {
     productId: string;
     quantity: number;
   }[];
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  number: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
 }
