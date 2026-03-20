@@ -6,7 +6,6 @@ import de.thfamily18.restaurant_backend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,6 +15,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findAllByOrderStatus(OrderStatus status, Pageable pageable);
     Page<Order> findAllByUser_Id(UUID userId, Pageable pageable);
     Page<Order> findAllByUser(User user, Pageable pageable);
+    Page<Order> findAllByUserEmail(String email, Pageable pageable);
+    Page<Order> findAllByUserEmailAndOrderStatus(String email, OrderStatus status, Pageable pageable);
 //    @EntityGraph(attributePaths = {"items", "items.product"})
 //    Page<Order> findAllByUser_Id(UUID userId, Pageable pageable);
 //

@@ -38,7 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
 
                         // Guest checkout: create order
-
+                        .requestMatchers(HttpMethod.GET, "/api/orders/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/orders", "/api/orders/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/orders", "/api/orders/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/api/orders", "/api/orders/**").permitAll()
@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/payments/stripe/webhook").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments/stripe/intents").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/payments/stripe/status/**").permitAll() // if you use polling
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/payments/stripe/intents").permitAll()
 
                         // ===== Admin =====
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

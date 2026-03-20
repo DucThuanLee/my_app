@@ -73,18 +73,67 @@ public class OrderService {
         return toResponse(order, lang);
     }
 
-    // ===== Admin =====
     @Transactional(readOnly = true)
-    public Page<OrderResponse> adminList(OrderStatus status, int page, int size, String langHeader) {
+    public Page<OrderResponse> getMyOrders(
+            String email,
+            OrderStatus status,
+            int page,
+            int size,
+            String sortBy,
+            String sortDir,
+            String langHeader
+    ) {
         String lang = normalizeLang(langHeader);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir)
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        String safeSortBy = switch (sortBy) {
+            case "createdAt", "totalPrice", "orderStatus", "paymentStatus" -> sortBy;
+            default -> "createdAt";
+        };
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, safeSortBy));
+
+        Page<Order> orders = (status == null)
+                ? orderRepo.findAllByUserEmail(email, pageable)
+                : orderRepo.findAllByUserEmailAndOrderStatus(email, status, pageable);
+
+        return orders.map(order -> toResponse(order, lang));
+    }
+
+    // ===== Admin =====
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> adminList(
+            OrderStatus status,
+            int page,
+            int size,
+            String sortBy,
+            String sortDir,
+            String langHeader
+    ) {
+        String lang = normalizeLang(langHeader);
+
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir)
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        // Allow only safe sortable fields
+        String safeSortBy = switch (sortBy) {
+            case "createdAt", "totalPrice", "orderStatus", "paymentStatus" -> sortBy;
+            default -> "createdAt";
+        };
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, safeSortBy));
+
         Page<Order> orders = (status == null)
                 ? orderRepo.findAll(pageable)
                 : orderRepo.findAllByOrderStatus(status, pageable);
 
         return orders.map(o -> toResponse(o, lang));
     }
+
     @Transactional
     public OrderResponse adminUpdateStatus(UUID id, OrderStatus status, String langHeader) {
         String lang = normalizeLang(langHeader);

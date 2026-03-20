@@ -6,6 +6,7 @@ import de.thfamily18.restaurant_backend.dto.RegisterRequest;
 import de.thfamily18.restaurant_backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -26,6 +28,7 @@ public class AuthController {
             @Valid @RequestBody RegisterRequest req
     ) {
         AuthResponse response = authService.register(req);
+        log.info("register result={}", response.toString());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -34,6 +37,7 @@ public class AuthController {
             @Valid @RequestBody LoginRequest req
     ) {
         AuthResponse response = authService.login(req);
+        log.info("login result={}", response.toString());
         return ResponseEntity.ok(response);
     }
 }
