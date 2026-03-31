@@ -2,12 +2,16 @@ package de.thfamily18.restaurant_backend.service;
 
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.net.RequestOptions;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
 import de.thfamily18.restaurant_backend.dto.payment.CreateStripeIntentResponse;
 import de.thfamily18.restaurant_backend.dto.payment.PaymentStatusResponse;
+import de.thfamily18.restaurant_backend.dto.payment.RefundResponse;
 import de.thfamily18.restaurant_backend.entity.Order;
 import de.thfamily18.restaurant_backend.entity.PaymentStatus;
+import de.thfamily18.restaurant_backend.entity.RefundStatus;
 import de.thfamily18.restaurant_backend.exception.ResourceNotFoundException;
 import de.thfamily18.restaurant_backend.repository.OrderRepository;
 import de.thfamily18.restaurant_backend.service.payment.StripeGateway;
@@ -140,6 +144,52 @@ public class StripePaymentService {
             b.setIdempotencyKey(idempotencyKey);
         }
         return b.build();
+    }
+
+    @Transactional
+    public RefundResponse refund(UUID orderId) throws StripeException {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+
+        if (order.getStripePaymentIntentId() == null || order.getStripePaymentIntentId().isBlank()) {
+            throw new IllegalArgumentException("Order has no Stripe payment intent");
+        }
+
+        if (order.getPaymentStatus() != PaymentStatus.PAID) {
+            throw new IllegalArgumentException("Only PAID orders can be refunded");
+        }
+
+        if (order.getStripeRefundId() != null && !order.getStripeRefundId().isBlank()) {
+            throw new IllegalArgumentException("Order already refunded");
+        }
+
+        RefundCreateParams params = RefundCreateParams.builder()
+                .setPaymentIntent(order.getStripePaymentIntentId())
+                .build();
+
+        // ✅ dùng gateway + idempotency
+        Refund refund = stripeGateway.createRefund(
+                params,
+                requestOptions("refund:" + order.getId())
+        );
+
+        order.setRefundRequestedAt(LocalDateTime.now());
+
+        // Optional: store refund id early
+        //order.setStripeRefundId(refund.getId());
+
+        orderRepo.save(order);
+
+        log.info("Refund requested: orderId={}, refundId={}, status={}",
+                orderId, refund.getId(), refund.getStatus());
+        return new RefundResponse(
+                refund.getId(),
+                RefundStatus.fromStripe(refund.getStatus()),
+                order.getId(),
+                order.getStripePaymentIntentId(),
+                order.getPaymentStatus(),
+                order.getRefundRequestedAt()
+        );
     }
 }
 

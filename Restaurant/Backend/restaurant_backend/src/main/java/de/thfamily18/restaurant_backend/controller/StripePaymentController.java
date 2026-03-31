@@ -4,6 +4,7 @@ import com.stripe.exception.StripeException;
 import de.thfamily18.restaurant_backend.dto.payment.CreateStripeIntentRequest;
 import de.thfamily18.restaurant_backend.dto.payment.CreateStripeIntentResponse;
 import de.thfamily18.restaurant_backend.dto.payment.PaymentStatusResponse;
+import de.thfamily18.restaurant_backend.dto.payment.RefundResponse;
 import de.thfamily18.restaurant_backend.service.StripePaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,5 +28,12 @@ public class StripePaymentController {
     @GetMapping("/status/{orderId}")
     public PaymentStatusResponse status(@PathVariable UUID orderId) {
         return stripePaymentService.getStatus(orderId);
+    }
+
+    @PostMapping("/refunds/{orderId}")
+    public RefundResponse refund(
+            @PathVariable UUID orderId
+    ) throws StripeException {
+        return stripePaymentService.refund(orderId);
     }
 }

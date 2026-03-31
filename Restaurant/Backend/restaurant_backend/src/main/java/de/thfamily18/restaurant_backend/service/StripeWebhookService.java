@@ -4,6 +4,7 @@ import com.stripe.model.Event;
 import com.stripe.net.Webhook;
 import de.thfamily18.restaurant_backend.entity.Order;
 import de.thfamily18.restaurant_backend.entity.PaymentStatus;
+import de.thfamily18.restaurant_backend.entity.RefundStatus;
 import de.thfamily18.restaurant_backend.exception.ResourceNotFoundException;
 import de.thfamily18.restaurant_backend.notification.NotificationService;
 import de.thfamily18.restaurant_backend.repository.OrderRepository;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
@@ -29,7 +31,8 @@ public class StripeWebhookService {
             "payment_intent.succeeded",
             "payment_intent.payment_failed",
             "payment_intent.canceled",
-            "charge.refunded" // refund confirmed
+            "charge.refunded", // refund confirmed
+            "charge.refund.updated" // add
     );
 
     private final OrderRepository orderRepo;
@@ -163,25 +166,72 @@ public class StripeWebhookService {
         Order order = orderRepo.findByStripePaymentIntentId(paymentIntentId).orElse(null);
 
         if (order == null) {
-            log.warn("Order not found by stripePaymentIntentId. paymentIntentId={}, eventId={}", paymentIntentId, eventId);
+            log.warn("Order not found. paymentIntentId={}, eventId={}", paymentIntentId, eventId);
             return;
         }
 
-        if (order.getPaymentStatus() == PaymentStatus.REFUNDED) {
-            log.info("Order already REFUNDED, ignoring duplicate charge.refunded. orderId={}, piId={}",
-                    order.getId(), paymentIntentId);
+        JsonNode refunds = obj.path("refunds").path("data");
+
+        if (!refunds.isArray() || refunds.isEmpty()) {
+            log.warn("No refunds found in payload. eventId={}", eventId);
             return;
         }
 
-        // Mark refunded (webhook is the source of truth).
-        order.setPaymentStatus(PaymentStatus.REFUNDED);
-        order.setRefundedAt(LocalDateTime.now());
+        // ===== 1. Tìm refund mới nhất =====
+        JsonNode latest = refunds.get(0);
+        for (JsonNode r : refunds) {
+            if (r.path("created").asLong(0) > latest.path("created").asLong(0)) {
+                latest = r;
+            }
+        }
+
+        String refundId = latest.path("id").asText(null);
+        String refundStatus = latest.path("status").asText(null);
+
+        // ===== 2. Idempotency basic =====
+        if (refundId != null && refundId.equals(order.getStripeRefundId())) {
+            log.info("Duplicate refund ignored. orderId={}, refundId={}", order.getId(), refundId);
+            return;
+        }
+
+        // ===== 3. Tổng refunded amount =====
+        long totalRefundedCents = 0;
+        for (JsonNode r : refunds) {
+            totalRefundedCents += r.path("amount").asLong(0);
+        }
+
+        BigDecimal refundedAmount = BigDecimal.valueOf(totalRefundedCents, 2);
+        order.setRefundedAmount(refundedAmount);
+
+        // ===== 4. Map status =====
+        RefundStatus rs = RefundStatus.fromStripe(refundStatus);
+        order.setRefundStatus(rs);
+        order.setStripeRefundId(refundId);
+
+        // ===== 5. Logic business =====
+        if (rs == RefundStatus.SUCCEEDED) {
+
+            // FULL refund
+            if (order.getTotalPrice() != null &&
+                    refundedAmount.compareTo(order.getTotalPrice()) >= 0) {
+
+                order.setPaymentStatus(PaymentStatus.REFUNDED);
+                order.setRefundedAt(LocalDateTime.now());
+
+                enqueueRefundSucceeded(order, refundId);
+
+                log.info("FULL refund. orderId={}", order.getId());
+
+            } else {
+                // PARTIAL refund
+                log.info("PARTIAL refund. orderId={}, refunded={}", order.getId(), refundedAmount);
+            }
+        }
+
         orderRepo.save(order);
 
-        // Enqueue refund notification
-        enqueueRefundSucceeded(order, chargeId);
-
-        log.info("Order marked REFUNDED. orderId={}, piId={}", order.getId(), paymentIntentId);
+        log.info("Refund processed. orderId={}, refundId={}, status={}",
+                order.getId(), refundId, refundStatus);
     }
 
     private void enqueuePaymentSucceeded(Order order) {

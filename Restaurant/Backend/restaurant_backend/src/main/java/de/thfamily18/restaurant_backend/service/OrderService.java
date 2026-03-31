@@ -10,6 +10,8 @@ import de.thfamily18.restaurant_backend.repository.OrderRepository;
 import de.thfamily18.restaurant_backend.repository.ProductRepository;
 import de.thfamily18.restaurant_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +29,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderService {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     private final OrderRepository orderRepo;
     private final ProductRepository productRepo;
     private final UserRepository userRepo;
@@ -99,7 +102,7 @@ public class OrderService {
         Page<Order> orders = (status == null)
                 ? orderRepo.findAllByUserEmail(email, pageable)
                 : orderRepo.findAllByUserEmailAndOrderStatus(email, status, pageable);
-
+        log.info("Found {} orders for user {} (status={})", orders.getTotalElements(), email, status);
         return orders.map(order -> toResponse(order, lang));
     }
 

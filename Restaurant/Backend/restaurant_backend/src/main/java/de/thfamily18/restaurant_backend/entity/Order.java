@@ -68,6 +68,9 @@ public class Order {
     // Optional: store requested/refunded amount (useful for partial refunds)
     @Column(precision = 12, scale = 2)
     private BigDecimal refundedAmount;
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private RefundStatus refundStatus;
 
     @PrePersist
     void prePersist() {
