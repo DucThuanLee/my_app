@@ -10,7 +10,7 @@ spring:
   # In a production environment, it's recommended to set it to none or validate and use DB version control tools like Liquibase or Flyway to ensure data security.
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    locations: "classpath:db/migration"
     schemas: public
     default-schema: public
     baseline-on-migrate: true

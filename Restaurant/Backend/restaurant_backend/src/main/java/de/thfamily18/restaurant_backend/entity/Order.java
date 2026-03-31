@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name="orders")
+@Table(name = "orders")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,10 +23,10 @@ public class Order {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="user_id")
+    @JoinColumn(name = "user_id")
     private User user; // guest => null
 
-    // GDPR: only store what is necessary for delivery
+    // ===== Customer info (GDPR minimal) =====
     private String customerName;
     private String phone;
     private String address;
@@ -55,22 +55,39 @@ public class Order {
     @Column(nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
-    // ===== Stripe Payment =====
-    @Column(name="stripe_payment_intent_id", unique = true)
+
+    // ================= STRIPE PAYMENT =================
+    @Column(name = "stripe_payment_intent_id", unique = true)
     private String stripePaymentIntentId;
 
     private LocalDateTime paidAt;
-    // ===== Stripe Refund =====
-    @Column(name = "stripe_refund_id", unique = true)
+
+    // ================= STRIPE REFUND =================
+
+    /**
+     * Latest refund id (for idempotency)
+     * NOTE: Stripe allows multiple refunds → this is only latest
+     */
+    @Column(name = "stripe_refund_id")
     private String stripeRefundId;
+
     private LocalDateTime refundRequestedAt;
     private LocalDateTime refundedAt;
-    // Optional: store requested/refunded amount (useful for partial refunds)
+
+    /**
+     * Total refunded amount (important for partial refund)
+     */
     @Column(precision = 12, scale = 2)
-    private BigDecimal refundedAmount;
-    @Enumerated(EnumType.STRING)
     @Builder.Default
+    private BigDecimal refundedAmount = BigDecimal.ZERO;
+
+    /**
+     * Refund status (latest)
+     */
+    @Enumerated(EnumType.STRING)
     private RefundStatus refundStatus;
+
+    // ================= LIFECYCLE =================
 
     @PrePersist
     void prePersist() {
@@ -78,11 +95,26 @@ public class Order {
         if (orderStatus == null) orderStatus = OrderStatus.NEW;
         if (paymentStatus == null) paymentStatus = PaymentStatus.PENDING;
         if (items == null) items = new ArrayList<>();
+        if (refundedAmount == null) refundedAmount = BigDecimal.ZERO;
     }
 
     public void addItem(OrderItem item) {
         if (items == null) items = new ArrayList<>();
         items.add(item);
         item.setOrder(this);
+    }
+
+    // ================= BUSINESS HELPERS =================
+
+    public boolean isFullyRefunded() {
+        return refundedAmount != null
+                && totalPrice != null
+                && refundedAmount.compareTo(totalPrice) >= 0;
+    }
+
+    public boolean isPartiallyRefunded() {
+        return refundedAmount != null
+                && refundedAmount.compareTo(BigDecimal.ZERO) > 0
+                && (totalPrice == null || refundedAmount.compareTo(totalPrice) < 0);
     }
 }

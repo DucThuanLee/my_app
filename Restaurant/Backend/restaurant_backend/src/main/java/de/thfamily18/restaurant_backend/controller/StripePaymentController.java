@@ -30,10 +30,4 @@ public class StripePaymentController {
         return stripePaymentService.getStatus(orderId);
     }
 
-    @PostMapping("/refunds/{orderId}")
-    public RefundResponse refund(
-            @PathVariable UUID orderId
-    ) throws StripeException {
-        return stripePaymentService.refund(orderId);
-    }
 }

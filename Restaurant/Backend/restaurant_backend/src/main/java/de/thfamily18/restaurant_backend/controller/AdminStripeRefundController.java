@@ -4,6 +4,7 @@ import com.stripe.exception.StripeException;
 import de.thfamily18.restaurant_backend.dto.payment.CreateRefundRequest;
 import de.thfamily18.restaurant_backend.dto.payment.RefundResponse;
 import de.thfamily18.restaurant_backend.service.StripeRefundService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,18 +24,43 @@ public class AdminStripeRefundController {
 
     private final StripeRefundService refundService;
 
-    /**
-     * Create refund for an order.
-     *
-     * - Full refund: amount = null
-     * - Partial refund: amount > 0
-     *
-     * NOTE:
-     * - PaymentStatus will NOT be set to REFUNDED here.
-     * - Webhook (charge.refunded / refund.updated) is the source of truth.
-     */
     @PostMapping("/refunds")
+    @Operation(
+            summary = "Create refund for an order",
+            description = """
+                    Create a refund via Stripe.
+
+                    - Full refund: amount = null
+                    - Partial refund: amount > 0
+
+                    Notes:
+                    - This API only REQUESTS refund.
+                    - Final status is determined by Stripe webhook.
+                    """
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Refund created successfully"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request (e.g. amount > order total)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "Order not found"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "409",
+                    description = "Order already refunded"
+            )
+    })
     public ResponseEntity<RefundResponse> refund(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Refund request payload",
+                    required = true
+            )
             @Valid @RequestBody CreateRefundRequest req
     ) throws StripeException {
 

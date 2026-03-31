@@ -7,10 +7,12 @@ import com.stripe.param.RefundCreateParams;
 import de.thfamily18.restaurant_backend.dto.payment.RefundResponse;
 import de.thfamily18.restaurant_backend.entity.Order;
 import de.thfamily18.restaurant_backend.entity.PaymentStatus;
+import de.thfamily18.restaurant_backend.entity.RefundStatus;
 import de.thfamily18.restaurant_backend.exception.ResourceNotFoundException;
 import de.thfamily18.restaurant_backend.repository.OrderRepository;
 import de.thfamily18.restaurant_backend.service.payment.StripeGateway;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,127 +24,96 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StripeRefundService {
 
-    private final OrderRepository orderRepo;
     private final StripeGateway stripeGateway;
+    private final OrderRepository orderRepo;
 
     @Value("${stripe.secretKey:}")
     private String stripeSecretKey;
 
     @Transactional
-    public RefundResponse refundOrder(UUID orderId, BigDecimal amountEurOrNull, String reason) throws StripeException {
+    public RefundResponse refundOrder(UUID orderId, BigDecimal amount, String reason)
+            throws StripeException {
+
+        // ===== 1. Load order =====
         Order order = orderRepo.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
-        // 1) Only refund paid orders (webhook-source-of-truth style)
-        if (order.getPaymentStatus() != PaymentStatus.PAID) {
-            // If already REFUNDED -> idempotent response
-            if (order.getPaymentStatus() == PaymentStatus.REFUNDED) {
-                // idempotent: already refunded
-                return new RefundResponse(
-                        order.getId(),
-                        order.getStripePaymentIntentId(),
-                        order.getStripeRefundId(),
-                        "already_refunded succeeded",                 // best guess; real status should come from Stripe
-                        order.getPaymentStatus().name()
-                );
-            }
-
-                // If refund already requested and you store stripeRefundId -> return that instead of failing (optional)
-                if (order.getStripeRefundId() != null && !order.getStripeRefundId().isBlank()) {
-                    Refund existing = safeRetrieveRefund(order.getStripeRefundId());
-                    return new RefundResponse(
-                            order.getId(),
-                            order.getStripePaymentIntentId(),
-                            order.getStripeRefundId(),
-                            existing != null ? existing.getStatus() : "unknown",
-                            order.getPaymentStatus().name()
-                    );
-            }
-            throw new IllegalStateException("Order is not refundable in state: " + order.getPaymentStatus());
-        }
-
-        // 2) Must have a PaymentIntent id
+        // ===== 2. Validate business rules =====
         if (order.getStripePaymentIntentId() == null || order.getStripePaymentIntentId().isBlank()) {
-            throw new IllegalStateException("Missing stripePaymentIntentId on order");
+            throw new IllegalArgumentException("Order has no Stripe payment intent");
         }
 
-        // 3) If already has refund id (idempotent) return
-        if (order.getStripeRefundId() != null && !order.getStripeRefundId().isBlank()) {
-            Refund existing = safeRetrieveRefund(order.getStripeRefundId());
-            return new RefundResponse(
-                    order.getId(),
-                    order.getStripePaymentIntentId(),
-                    order.getStripeRefundId(),
-                    existing != null ? existing.getStatus() : "already_created",
-                    order.getPaymentStatus().name()
-            );
-
+        if (order.getPaymentStatus() != PaymentStatus.PAID) {
+            throw new IllegalArgumentException("Only PAID orders can be refunded");
         }
 
-        // 4) Amount (optional)
-        Long amountCents = null;
-        if (amountEurOrNull != null) {
-            if (amountEurOrNull.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException("Refund amount must be > 0");
+        // ===== 3. Handle partial refund amount =====
+        Long amountInCents = null;
+
+        if (amount != null) {
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Refund amount must be greater than 0");
             }
-            if (order.getTotalPrice() != null && amountEurOrNull.compareTo(order.getTotalPrice()) > 0) {
-                throw new IllegalArgumentException("Refund amount must be <= order total");
+
+            if (order.getTotalPrice() != null && amount.compareTo(order.getTotalPrice()) > 0) {
+                throw new IllegalArgumentException("Refund amount exceeds order total");
             }
-            amountCents = toCents(amountEurOrNull);
+
+            amountInCents = toCents(amount);
         }
+
+        // ===== 4. Build Stripe refund request =====
         RefundCreateParams.Builder builder = RefundCreateParams.builder()
-                .setPaymentIntent(order.getStripePaymentIntentId())
-                .putMetadata("orderId", order.getId().toString());
-        if (amountCents != null) {
-            builder.setAmount(amountCents);
+                .setPaymentIntent(order.getStripePaymentIntentId());
+
+        if (amountInCents != null) {
+            builder.setAmount(amountInCents); // partial refund
         }
-        // Stripe reason is enum-like; keep as metadata unless you map it strictly
+
         if (reason != null && !reason.isBlank()) {
-            builder.putMetadata("reason", reason);
+            builder.setReason(mapReason(reason));
         }
 
         RefundCreateParams params = builder.build();
 
-        // 5) Stripe idempotency key: prevent duplicates on retries
-        String idempotencyKey = "refund:order:" + order.getId()
-                + (amountEurOrNull == null ? ":full" : ":partial:" + toCents(amountEurOrNull));
+        // ===== 5. Call Stripe with idempotency =====
+        String idempotencyKey = "refund:" + order.getId();
 
-        Refund refund = stripeGateway.createRefund(params, requestOptions(idempotencyKey));
+        Refund refund = stripeGateway.createRefund(
+                params,
+                requestOptions(idempotencyKey)
+        );
 
-        // 6) Persist refund id (do NOT set REFUNDED yet if you want webhook as source of truth)
-        // For MVP you can set immediately, but production: prefer webhook charge.refunded / refund.updated
-        order.setStripeRefundId(refund.getId());
+        // ===== 6. Update order state (request only, not final) =====
         order.setRefundRequestedAt(LocalDateTime.now());
-        // Optional: store requested amount (if you added field)
-//        if (amountEurOrNull != null) {
-//            order.setRefundedAmount(amountEurOrNull);
-//        }
-        // Option A (strict): keep PAID until webhook confirms refund succeeded
-        // Option B (simple): mark REFUNDED immediately
-        // I chose Option A (production-safe):
-        // order.setPaymentStatus(PaymentStatus.REFUNDED);
-        // order.setRefundedAt(LocalDateTime.now());
+        order.setRefundStatus(RefundStatus.PENDING);
+
+        // NOTE:
+        // Do NOT mark as REFUNDED here.
+        // Webhook (charge.refunded / refund.updated) is the source of truth.
 
         orderRepo.save(order);
 
+        log.info("Refund requested. orderId={}, refundId={}, status={}",
+                orderId, refund.getId(), refund.getStatus());
+
+        // ===== 7. Build response =====
+        // Use requested amount if provided, otherwise fallback to current refundedAmount (may be null before webhook)
         return new RefundResponse(
                 order.getId(),
                 order.getStripePaymentIntentId(),
                 refund.getId(),
-                refund.getStatus(),
-                order.getPaymentStatus().name() // still PAID until webhook
+                RefundStatus.fromStripe(refund.getStatus()),
+                order.getPaymentStatus(),
+                order.getRefundedAmount() != null ? order.getRefundedAmount() : amount,
+                order.getRefundRequestedAt()
         );
     }
 
-    private Refund safeRetrieveRefund(String refundId) {
-        try {
-            return stripeGateway.retrieveRefund(refundId);
-        } catch (Exception ignored) {
-            return null;
-        }
-    }
+    // ===== helper =====
 
     private long toCents(BigDecimal eur) {
         return eur.movePointRight(2)
@@ -150,17 +121,26 @@ public class StripeRefundService {
                 .longValueExact();
     }
 
+    private RefundCreateParams.Reason mapReason(String reason) {
+        return switch (reason.toLowerCase()) {
+            case "duplicate" -> RefundCreateParams.Reason.DUPLICATE;
+            case "fraudulent" -> RefundCreateParams.Reason.FRAUDULENT;
+            case "requested_by_customer" -> RefundCreateParams.Reason.REQUESTED_BY_CUSTOMER;
+            default -> null;
+        };
+    }
+
     private RequestOptions requestOptions(String idempotencyKey) {
-        // Refund is an admin action; fail-fast if missing key
-        if (stripeSecretKey == null || stripeSecretKey.isBlank()) {
-            throw new IllegalStateException("Missing STRIPE_SECRET_KEY");
-        }
         RequestOptions.RequestOptionsBuilder b = RequestOptions.builder();
-        b.setApiKey(stripeSecretKey);
+
+        if (stripeSecretKey != null && !stripeSecretKey.isBlank()) {
+            b.setApiKey(stripeSecretKey);
+        }
 
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             b.setIdempotencyKey(idempotencyKey);
         }
+
         return b.build();
     }
 }
