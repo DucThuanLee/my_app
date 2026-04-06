@@ -1,0 +1,10 @@
+
+#spring:
+#  datasource:
+#    url: jdbc:postgresql://staging-db:5432/app
+#    username: staging
+#    password: xxx
+#
+#  flyway:
+#    enabled: true
+#    clean-disabled: true

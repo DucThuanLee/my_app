@@ -1,0 +1,12 @@
+#spring:
+#  datasource:
+#    url: jdbc:postgresql://localhost:5432/dev_db
+#    username: dev
+#    password: dev
+#
+#  flyway:
+#    enabled: true
+#    clean-disabled: false   # ⚠️ cho phép clean DB
+#
+#  jpa:
+#    show-sql: true

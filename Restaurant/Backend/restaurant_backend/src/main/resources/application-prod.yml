@@ -1,0 +1,10 @@
+#spring:
+#  datasource:
+#    url: jdbc:postgresql://prod-db:5432/app
+#    username: prod
+#    password: xxx
+#
+#  flyway:
+#    enabled: true
+#    clean-disabled: true
+#    validate-on-migrate: true

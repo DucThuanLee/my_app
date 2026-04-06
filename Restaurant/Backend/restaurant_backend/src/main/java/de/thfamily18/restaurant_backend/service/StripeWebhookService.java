@@ -5,6 +5,7 @@ import com.stripe.net.Webhook;
 import de.thfamily18.restaurant_backend.entity.Order;
 import de.thfamily18.restaurant_backend.entity.PaymentStatus;
 import de.thfamily18.restaurant_backend.entity.RefundStatus;
+import de.thfamily18.restaurant_backend.entity.StripeRefundStatus;
 import de.thfamily18.restaurant_backend.exception.ResourceNotFoundException;
 import de.thfamily18.restaurant_backend.notification.NotificationService;
 import de.thfamily18.restaurant_backend.repository.OrderRepository;
@@ -204,12 +205,15 @@ public class StripeWebhookService {
         order.setRefundedAmount(refundedAmount);
 
         // ===== 4. Map status =====
-        RefundStatus rs = RefundStatus.fromStripe(refundStatus);
-        order.setRefundStatus(rs);
+        StripeRefundStatus rs = StripeRefundStatus.fromStripe(refundStatus);
         order.setStripeRefundId(refundId);
+        order.setStripeRefundStatus(rs);
+        if (rs == StripeRefundStatus.SUCCEEDED) {
+            order.setRefundStatus(RefundStatus.REFUNDED);
+        }
 
         // ===== 5. Logic business =====
-        if (rs == RefundStatus.SUCCEEDED) {
+        if (rs == StripeRefundStatus.SUCCEEDED) {
 
             // FULL refund
             if (order.getTotalPrice() != null &&

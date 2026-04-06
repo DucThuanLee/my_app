@@ -8,6 +8,7 @@ import de.thfamily18.restaurant_backend.dto.payment.RefundResponse;
 import de.thfamily18.restaurant_backend.entity.Order;
 import de.thfamily18.restaurant_backend.entity.PaymentStatus;
 import de.thfamily18.restaurant_backend.entity.RefundStatus;
+import de.thfamily18.restaurant_backend.entity.StripeRefundStatus;
 import de.thfamily18.restaurant_backend.exception.ResourceNotFoundException;
 import de.thfamily18.restaurant_backend.repository.OrderRepository;
 import de.thfamily18.restaurant_backend.service.payment.StripeGateway;
@@ -89,7 +90,8 @@ public class StripeRefundService {
 
         // ===== 6. Update order state (request only, not final) =====
         order.setRefundRequestedAt(LocalDateTime.now());
-        order.setRefundStatus(RefundStatus.PENDING);
+        order.setRefundStatus(RefundStatus.REQUESTED);
+        order.setStripeRefundStatus(StripeRefundStatus.PENDING);
 
         // NOTE:
         // Do NOT mark as REFUNDED here.
@@ -106,7 +108,7 @@ public class StripeRefundService {
                 order.getId(),
                 order.getStripePaymentIntentId(),
                 refund.getId(),
-                RefundStatus.fromStripe(refund.getStatus()),
+                StripeRefundStatus.fromStripe(refund.getStatus()),
                 order.getPaymentStatus(),
                 order.getRefundedAmount() != null ? order.getRefundedAmount() : amount,
                 order.getRefundRequestedAt()

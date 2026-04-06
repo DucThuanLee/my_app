@@ -1,7 +1,7 @@
 package de.thfamily18.restaurant_backend.dto.payment;
 
 import de.thfamily18.restaurant_backend.entity.PaymentStatus;
-import de.thfamily18.restaurant_backend.entity.RefundStatus;
+import de.thfamily18.restaurant_backend.entity.StripeRefundStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,7 +11,7 @@ public record RefundResponse(
         UUID orderId,
         String paymentIntentId,
         String refundId,
-        RefundStatus refundStatus,
+        StripeRefundStatus refundStatus,
         PaymentStatus paymentStatus,
         BigDecimal refundedAmount,
         LocalDateTime requestedAt

@@ -82,11 +82,18 @@ public class Order {
     private BigDecimal refundedAmount = BigDecimal.ZERO;
 
     /**
-     * Refund status (latest)
+     * Business status
      */
     @Enumerated(EnumType.STRING)
-    private RefundStatus refundStatus;
+    @Column(nullable = false)
+    @Builder.Default
+    private RefundStatus refundStatus = RefundStatus.NOT_REQUESTED;
 
+    /**
+     * Stripe technical status
+     */
+    @Enumerated(EnumType.STRING)
+    private StripeRefundStatus stripeRefundStatus;
     // ================= LIFECYCLE =================
 
     @PrePersist
