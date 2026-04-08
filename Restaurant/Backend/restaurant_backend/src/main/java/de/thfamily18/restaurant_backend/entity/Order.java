@@ -62,38 +62,22 @@ public class Order {
 
     private LocalDateTime paidAt;
 
-    // ================= STRIPE REFUND =================
-
-    /**
-     * Latest refund id (for idempotency)
-     * NOTE: Stripe allows multiple refunds → this is only latest
-     */
-    @Column(name = "stripe_refund_id")
-    private String stripeRefundId;
-
-    private LocalDateTime refundRequestedAt;
-    private LocalDateTime refundedAt;
-
-    /**
-     * Total refunded amount (important for partial refund)
-     */
-    @Column(precision = 12, scale = 2)
-    @Builder.Default
-    private BigDecimal refundedAmount = BigDecimal.ZERO;
-
-    /**
-     * Business status
-     */
+    // ================= REFUND (BUSINESS STATE) =================
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
     private RefundStatus refundStatus = RefundStatus.NOT_REQUESTED;
 
-    /**
-     * Stripe technical status
-     */
-    @Enumerated(EnumType.STRING)
-    private StripeRefundStatus stripeRefundStatus;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Refund> refunds = new ArrayList<>();
+
+    @Column(precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal refundedAmount = BigDecimal.ZERO;
+
+    private LocalDateTime refundedAt;
+
     // ================= LIFECYCLE =================
 
     @PrePersist
@@ -122,6 +106,6 @@ public class Order {
     public boolean isPartiallyRefunded() {
         return refundedAmount != null
                 && refundedAmount.compareTo(BigDecimal.ZERO) > 0
-                && (totalPrice == null || refundedAmount.compareTo(totalPrice) < 0);
+                && refundedAmount.compareTo(totalPrice) < 0;
     }
 }

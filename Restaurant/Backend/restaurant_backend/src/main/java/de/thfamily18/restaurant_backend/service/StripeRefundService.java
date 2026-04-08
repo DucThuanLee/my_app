@@ -11,10 +11,12 @@ import de.thfamily18.restaurant_backend.entity.RefundStatus;
 import de.thfamily18.restaurant_backend.entity.StripeRefundStatus;
 import de.thfamily18.restaurant_backend.exception.ResourceNotFoundException;
 import de.thfamily18.restaurant_backend.repository.OrderRepository;
+import de.thfamily18.restaurant_backend.repository.RefundRepository;
 import de.thfamily18.restaurant_backend.service.payment.StripeGateway;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class StripeRefundService {
 
     private final StripeGateway stripeGateway;
     private final OrderRepository orderRepo;
+    private final RefundRepository refundRepo;
 
     @Value("${stripe.secretKey:}")
     private String stripeSecretKey;
@@ -51,6 +54,10 @@ public class StripeRefundService {
             throw new IllegalArgumentException("Only PAID orders can be refunded");
         }
 
+        if (order.getRefundStatus() == RefundStatus.REQUESTED) {
+            throw new IllegalStateException("Refund already requested");
+        }
+
         // ===== 3. Handle partial refund amount =====
         Long amountInCents = null;
 
@@ -59,8 +66,13 @@ public class StripeRefundService {
                 throw new IllegalArgumentException("Refund amount must be greater than 0");
             }
 
-            if (order.getTotalPrice() != null && amount.compareTo(order.getTotalPrice()) > 0) {
-                throw new IllegalArgumentException("Refund amount exceeds order total");
+            BigDecimal alreadyRefunded = order.getRefundedAmount() == null
+                    ? BigDecimal.ZERO
+                    : order.getRefundedAmount();
+
+            if (order.getTotalPrice() != null &&
+                    alreadyRefunded.add(amount).compareTo(order.getTotalPrice()) > 0) {
+                throw new IllegalArgumentException("Refund exceeds total amount");
             }
 
             amountInCents = toCents(amount);
@@ -81,40 +93,50 @@ public class StripeRefundService {
         RefundCreateParams params = builder.build();
 
         // ===== 5. Call Stripe with idempotency =====
-        String idempotencyKey = "refund:" + order.getId();
+        String idempotencyKey = "refund:" + order.getId() +
+                (amount != null ? ":" + amount : "");
 
         Refund refund = stripeGateway.createRefund(
                 params,
                 requestOptions(idempotencyKey)
         );
 
-        // ===== 6. Update order state (request only, not final) =====
-        order.setRefundRequestedAt(LocalDateTime.now());
-        order.setRefundStatus(RefundStatus.REQUESTED);
-        order.setStripeRefundStatus(StripeRefundStatus.PENDING);
+// ===== 6. Save refund (INITIAL STATE) =====
+        BigDecimal refundAmount = amount != null ? amount : order.getTotalPrice();
 
-        // NOTE:
-        // Do NOT mark as REFUNDED here.
-        // Webhook (charge.refunded / refund.updated) is the source of truth.
+        var refundEntity = de.thfamily18.restaurant_backend.entity.Refund.builder()
+                .order(order)
+                .stripeRefundId(refund.getId())
+                .amount(refundAmount)
+                .status(StripeRefundStatus.PENDING) // ✅ NEVER trust API
+                .createdAt(LocalDateTime.now())
+                .build();
 
-        orderRepo.save(order);
-
+// ===== Save immediately (race-safe) =====
+        try {
+            refundRepo.saveAndFlush(refundEntity); // ✅ CRITICAL
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Duplicate refund detected, ignoring. refundId={}", refund.getId());
+        }
         log.info("Refund requested. orderId={}, refundId={}, status={}",
                 orderId, refund.getId(), refund.getStatus());
 
-        // ===== 7. Build response =====
-        // Use requested amount if provided, otherwise fallback to current refundedAmount (may be null before webhook)
+// ===== 7. Update order =====
+        order.setRefundStatus(RefundStatus.REQUESTED);
+
+        orderRepo.save(order);
+
+// ===== 8. Response =====
         return new RefundResponse(
                 order.getId(),
                 order.getStripePaymentIntentId(),
                 refund.getId(),
-                StripeRefundStatus.fromStripe(refund.getStatus()),
+                StripeRefundStatus.PENDING, // ✅ always pending
                 order.getPaymentStatus(),
-                order.getRefundedAmount() != null ? order.getRefundedAmount() : amount,
-                order.getRefundRequestedAt()
+                refundAmount,
+                refundEntity.getCreatedAt()
         );
     }
-
     // ===== helper =====
 
     private long toCents(BigDecimal eur) {

@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
-    Optional<Order> findByStripeRefundId(String stripeRefundId);
     Optional<Order> findByStripePaymentIntentId(String stripePaymentIntentId);
     Page<Order> findAllByOrderStatus(OrderStatus status, Pageable pageable);
     Page<Order> findAllByUser_Id(UUID userId, Pageable pageable);

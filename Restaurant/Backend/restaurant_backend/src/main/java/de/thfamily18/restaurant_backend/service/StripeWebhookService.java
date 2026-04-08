@@ -2,26 +2,25 @@ package de.thfamily18.restaurant_backend.service;
 
 import com.stripe.model.Event;
 import com.stripe.net.Webhook;
-import de.thfamily18.restaurant_backend.entity.Order;
-import de.thfamily18.restaurant_backend.entity.PaymentStatus;
-import de.thfamily18.restaurant_backend.entity.RefundStatus;
-import de.thfamily18.restaurant_backend.entity.StripeRefundStatus;
+import de.thfamily18.restaurant_backend.entity.*;
 import de.thfamily18.restaurant_backend.exception.ResourceNotFoundException;
 import de.thfamily18.restaurant_backend.notification.NotificationService;
 import de.thfamily18.restaurant_backend.repository.OrderRepository;
+import de.thfamily18.restaurant_backend.repository.RefundRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +36,7 @@ public class StripeWebhookService {
     );
 
     private final OrderRepository orderRepo;
+    private final RefundRepository refundRepo;
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
 
@@ -46,6 +46,7 @@ public class StripeWebhookService {
     @Transactional
     public void handle(String payload, String sigHeader) {
         // Fail-fast if missing secret (signature verification must be enabled in production).
+        // ===== 1. Verify Stripe signature =====
         if (webhookSecret == null || webhookSecret.isBlank()) {
             throw new IllegalStateException("Missing stripe.webhookSecret (STRIPE_WEBHOOK_SECRET)");
         }
@@ -66,6 +67,7 @@ public class StripeWebhookService {
         final JsonNode obj;
         try {
             obj = objectMapper.readTree(payload).path("data").path("object");
+            log.info("RAW webhook obj = {}", obj.toPrettyString());
         } catch (Exception e) {
             log.warn("Cannot parse webhook payload. eventId={}, type={}", event.getId(), type, e);
             // Return 200 OK to prevent Stripe retry storms; controller should always respond OK.
@@ -74,24 +76,50 @@ public class StripeWebhookService {
 
         log.info("Stripe webhook received. type={}, eventId={}", type, event.getId());
 
+        // ===== 2. Route event =====
         if (type.startsWith("payment_intent.")) {
-            handlePaymentIntentEvent(type, event.getId(), obj);
+            handlePaymentIntentEvent(type, obj);
             return;
         }
 
-        if ("charge.refunded".equals(type)) {
-            handleChargeRefunded(event.getId(), obj);
+        if ("charge.refunded".equals(type) || "charge.refund.updated".equals(type)) {
+            handleRefundEvent(obj);
         }
     }
 
-    private void handlePaymentIntentEvent(String type, String eventId, JsonNode obj) {
+    /**
+     * Handle a PaymentIntent event.
+     * {
+     *   "id": "evt_1Nx...",
+     *   "type": "payment_intent.succeeded",
+     *   "data": {
+     *     "object": {
+     *       "id": "pi_3O...",
+     *       "amount": 2000, // Amount (e.g., 20.00 USD - smallest unit)
+     *       "currency": "usd",
+     *       "status": "succeeded",
+     *       "metadata": {
+     *         "order_id": "6BAF-123", // It's very important that you map to your database.
+     *         "user_id": "user_88"
+     *       },
+     *       "payment_method": "pm_1Nx...",
+     *       "receipt_email": "customer@example.com"
+     *     }
+     *   }
+     * }
+     * @param type
+     * @param obj
+     */
+    private void handlePaymentIntentEvent(String type, JsonNode obj) {
+
         final String piId = obj.path("id").asText(null);
         final String orderIdStr = obj.path("metadata").path("orderId").asText(null);
 
-        log.info("PI event. type={}, eventId={}, piId={}, orderId={}", type, eventId, piId, orderIdStr);
+        log.info("PI event received. type={}, piId={}, orderId={}", type, piId, orderIdStr);
 
+        // ===== 1. Validate metadata =====
         if (orderIdStr == null || orderIdStr.isBlank()) {
-            log.warn("Missing metadata.orderId. eventId={}, piId={}", eventId, piId);
+            log.warn("Missing metadata.orderId, piId={}", piId);
             return;
         }
 
@@ -99,143 +127,229 @@ public class StripeWebhookService {
         try {
             orderId = UUID.fromString(orderIdStr);
         } catch (IllegalArgumentException ex) {
-            log.warn("Invalid orderId UUID in metadata. orderId={}, eventId={}, piId={}", orderIdStr, eventId, piId);
+            log.warn("Invalid orderId UUID in metadata. orderId={}, piId={}", orderIdStr, piId);
             return;
         }
 
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
-        // Idempotency / state rules
+        // ===== 2. Idempotency / state guards =====
+
+        // Already refunded → ignore everything
         if (order.getPaymentStatus() == PaymentStatus.REFUNDED) {
-            log.info("Order already REFUNDED, ignoring PI event. orderId={}, type={}, piId={}", orderId, type, piId);
+            log.info("Ignore PI event: already REFUNDED. orderId={}, type={}, piId={}", orderId, type, piId);
             return;
         }
+
+        // Already paid → ignore downgrade events
         if (order.getPaymentStatus() == PaymentStatus.PAID &&
-                ("payment_intent.payment_failed".equals(type) || "payment_intent.canceled".equals(type))) {
-            log.info("Order already PAID, ignoring late PI fail/cancel. orderId={}, type={}, piId={}", orderId, type, piId);
-            return;
-        }
-        if (order.getPaymentStatus() == PaymentStatus.PAID && "payment_intent.succeeded".equals(type)) {
-            log.info("Order already PAID, ignoring duplicate succeeded. orderId={}, piId={}", orderId, piId);
+                ("payment_intent.payment_failed".equals(type)
+                        || "payment_intent.canceled".equals(type))) {
+
+            log.info("Ignore late downgrade event. orderId={}, type={}, piId={}", orderId, type, piId);
             return;
         }
 
-        // Optional safety: PaymentIntent mismatch (relaxed: overwrite).
-        if (order.getStripePaymentIntentId() != null && !order.getStripePaymentIntentId().isBlank()
-                && piId != null && !piId.isBlank()
+        // Duplicate success
+        if (order.getPaymentStatus() == PaymentStatus.PAID &&
+                "payment_intent.succeeded".equals(type)) {
+
+            log.info("Ignore duplicate success event. orderId={}, piId={}", orderId, piId);
+            return;
+        }
+
+        // ===== 3. Fraud / mismatch detection =====
+        if (order.getStripePaymentIntentId() != null
+                && !order.getStripePaymentIntentId().isBlank()
+                && piId != null
+                && !piId.isBlank()
                 && !order.getStripePaymentIntentId().equals(piId)) {
-            log.warn("PaymentIntent mismatch. orderId={}, dbPiId={}, webhookPiId={}",
+
+            log.warn("PaymentIntent mismatch detected! orderId={}, dbPiId={}, webhookPiId={}",
                     orderId, order.getStripePaymentIntentId(), piId);
+
+            // 👉 Optional: you can decide to reject update here
+            // return;
         }
 
-        // Update state
-        if ("payment_intent.succeeded".equals(type)) {
-            order.setPaymentStatus(PaymentStatus.PAID);
-            order.setPaidAt(LocalDateTime.now());
-            order.setStripePaymentIntentId(piId);
+        // ===== 4. State transition =====
+        switch (type) {
 
-            // Enqueue notification after state is updated (still inside DB transaction).
-            enqueuePaymentSucceeded(order);
+            case "payment_intent.succeeded" -> {
+                order.setPaymentStatus(PaymentStatus.PAID);
+                order.setPaidAt(LocalDateTime.now());
+                order.setStripePaymentIntentId(piId);
 
-        } else if ("payment_intent.payment_failed".equals(type)) {
-            order.setPaymentStatus(PaymentStatus.FAILED);
-            order.setStripePaymentIntentId(piId);
+                // ✅ IMPORTANT: enqueue AFTER COMMIT
+                registerAfterCommit(() -> enqueuePaymentSucceeded(order));
+            }
 
-        } else if ("payment_intent.canceled".equals(type)) {
-            order.setPaymentStatus(PaymentStatus.CANCELED);
-            order.setStripePaymentIntentId(piId);
+            case "payment_intent.processing" -> {
+                // Optional but recommended
+                order.setPaymentStatus(PaymentStatus.PROCESSING);
+                order.setStripePaymentIntentId(piId);
+            }
+
+            case "payment_intent.payment_failed" -> {
+                order.setPaymentStatus(PaymentStatus.FAILED);
+                order.setStripePaymentIntentId(piId);
+            }
+
+            case "payment_intent.canceled" -> {
+                order.setPaymentStatus(PaymentStatus.CANCELED);
+                order.setStripePaymentIntentId(piId);
+            }
+
+            default -> {
+                log.debug("Unhandled PI event type: {}", type);
+                return;
+            }
         }
 
+        // ===== 5. Persist =====
         orderRepo.save(order);
 
-        log.info("Order updated from PI event. orderId={}, paymentStatus={}, piId={}",
+        log.info("Order updated. orderId={}, status={}, piId={}",
                 orderId, order.getPaymentStatus(), piId);
     }
 
-    private void handleChargeRefunded(String eventId, JsonNode obj) {
-        final String paymentIntentId = obj.path("payment_intent").asText(null);
-        final String chargeId = obj.path("id").asText(null);
+    /**
+     * Handle a Refund event.
+     * {
+     *   "id": "evt_1Ny...",
+     *   "type": "charge.refunded",
+     *   "data": {
+     *     "object": {
+     *       "id": "ch_3O...", // Original Charge ID
+     *       "amount_refunded": 2000,
+     *       "refunds": {
+     *         "data": [
+     *           {
+     *             "id": "re_3O...", // This is the stripe_refund_id you need to save to the refunds table.
+     *             "amount": 2000,
+     *             "status": "succeeded",
+     *             "payment_intent": "pi_3O...",
+     *             "reason": "requested_by_customer"
+     *           }
+     *         ]
+     *       },
+     *       "status": "succeeded"
+     *     }
+     *   }
+     * }
+     * @param obj
+     */
+    private void handleRefundEvent(JsonNode obj) {
 
-        log.info("Charge refunded. eventId={}, chargeId={}, paymentIntentId={}", eventId, chargeId, paymentIntentId);
+        String paymentIntentId = obj.path("payment_intent").asText(null);
+        String chargeId = obj.path("id").asText(null);
 
-        if (paymentIntentId == null || paymentIntentId.isBlank()) {
-            log.warn("Missing payment_intent in charge.refunded. eventId={}, chargeId={}", eventId, chargeId);
+        if (paymentIntentId == null) {
+            log.warn("Missing payment_intent. chargeId={}", chargeId);
             return;
         }
 
         Order order = orderRepo.findByStripePaymentIntentId(paymentIntentId).orElse(null);
-
         if (order == null) {
-            log.warn("Order not found. paymentIntentId={}, eventId={}", paymentIntentId, eventId);
+            log.warn("Missing order. chargeId={}, paymentIntentId={}", chargeId, paymentIntentId);
             return;
         }
 
-        JsonNode refunds = obj.path("refunds").path("data");
-
-        if (!refunds.isArray() || refunds.isEmpty()) {
-            log.warn("No refunds found in payload. eventId={}", eventId);
+        JsonNode refundsNode = obj.path("refunds").path("data");
+        if (!refundsNode.isArray() || refundsNode.isEmpty()) {
+            log.warn("Missing refunds. chargeId={}, paymentIntentId={}", chargeId, paymentIntentId);
             return;
         }
 
-        // ===== 1. Tìm refund mới nhất =====
-        JsonNode latest = refunds.get(0);
-        for (JsonNode r : refunds) {
-            if (r.path("created").asLong(0) > latest.path("created").asLong(0)) {
-                latest = r;
-            }
+        // ===== 1. Extract IDs =====
+        List<String> refundIds = new ArrayList<>();
+        for (JsonNode r : refundsNode) {
+            refundIds.add(r.path("id").asText());
         }
 
-        String refundId = latest.path("id").asText(null);
-        String refundStatus = latest.path("status").asText(null);
+        // ===== 2. Load existing (avoid N+1) =====
+        Map<String, Refund> existingMap = refundRepo
+                .findAllByStripeRefundIdIn(refundIds)
+                .stream()
+                .collect(Collectors.toMap(Refund::getStripeRefundId, r -> r));
 
-        // ===== 2. Idempotency basic =====
-        if (refundId != null && refundId.equals(order.getStripeRefundId())) {
-            log.info("Duplicate refund ignored. orderId={}, refundId={}", order.getId(), refundId);
-            return;
-        }
+        List<Refund> toSave = new ArrayList<>();
 
-        // ===== 3. Tổng refunded amount =====
-        long totalRefundedCents = 0;
-        for (JsonNode r : refunds) {
-            totalRefundedCents += r.path("amount").asLong(0);
-        }
+        // ===== 3. UPSERT =====
+        for (JsonNode r : refundsNode) {
 
-        BigDecimal refundedAmount = BigDecimal.valueOf(totalRefundedCents, 2);
-        order.setRefundedAmount(refundedAmount);
+            String refundId = r.path("id").asText();
+            long amountCents = r.path("amount").asLong();
+            String statusRaw = r.path("status").asText();
+            String failureReason = r.path("failure_reason").asText(null);
+            String reason = r.path("reason").asText(null);
 
-        // ===== 4. Map status =====
-        StripeRefundStatus rs = StripeRefundStatus.fromStripe(refundStatus);
-        order.setStripeRefundId(refundId);
-        order.setStripeRefundStatus(rs);
-        if (rs == StripeRefundStatus.SUCCEEDED) {
-            order.setRefundStatus(RefundStatus.REFUNDED);
-        }
+            StripeRefundStatus status = StripeRefundStatus.fromStripe(statusRaw);
 
-        // ===== 5. Logic business =====
-        if (rs == StripeRefundStatus.SUCCEEDED) {
+            Refund entity = existingMap.get(refundId);
 
-            // FULL refund
-            if (order.getTotalPrice() != null &&
-                    refundedAmount.compareTo(order.getTotalPrice()) >= 0) {
-
-                order.setPaymentStatus(PaymentStatus.REFUNDED);
-                order.setRefundedAt(LocalDateTime.now());
-
-                enqueueRefundSucceeded(order, refundId);
-
-                log.info("FULL refund. orderId={}", order.getId());
-
+            if (entity == null) {
+                entity = Refund.builder()
+                        .order(order)
+                        .stripeRefundId(refundId)
+                        .stripeChargeId(chargeId)
+                        .amount(BigDecimal.valueOf(amountCents, 2))
+                        .status(status)
+                        .reason(reason)
+                        .failureReason(failureReason)
+                        .createdAt(LocalDateTime.now())
+                        .build();
             } else {
-                // PARTIAL refund
-                log.info("PARTIAL refund. orderId={}, refunded={}", order.getId(), refundedAmount);
+                entity.setStatus(status);
+                entity.setFailureReason(failureReason);
             }
+
+            toSave.add(entity);
+        }
+
+        // ===== 4. Batch save =====
+        refundRepo.saveAll(toSave);
+
+        // ===== 5. Recalculate aggregate (ONLY SUCCEEDED) =====
+        BigDecimal totalRefunded = refundRepo.sumSucceededAmountByOrderId(order.getId());
+        if (totalRefunded == null) totalRefunded = BigDecimal.ZERO;
+
+        order.setRefundedAmount(totalRefunded);
+
+        // ===== 6. Business logic =====
+        BigDecimal totalPrice = Objects.requireNonNullElse(
+                order.getTotalPrice(),
+                BigDecimal.ZERO
+        );
+
+        if (totalRefunded.compareTo(BigDecimal.ZERO) == 0) {
+
+            order.setRefundStatus(RefundStatus.REQUESTED);
+
+        } else if (totalRefunded.compareTo(totalPrice) >= 0) {
+
+            order.setRefundStatus(RefundStatus.REFUNDED);
+            order.setPaymentStatus(PaymentStatus.REFUNDED);
+            order.setRefundedAt(LocalDateTime.now());
+
+            registerAfterCommit(() -> enqueueRefundSucceeded(order, chargeId));
+
+        } else {
+
+            order.setRefundStatus(RefundStatus.PARTIAL);
         }
 
         orderRepo.save(order);
 
-        log.info("Refund processed. orderId={}, refundId={}, status={}",
-                order.getId(), refundId, refundStatus);
+        // ===== 7. Logging (audit-friendly) =====
+        log.info(
+                "Refund sync completed. orderId={}, refunded={}, refundCount={}, chargeId={}",
+                order.getId(),
+                totalRefunded,
+                toSave.size(),
+                chargeId
+        );
     }
 
     private void enqueuePaymentSucceeded(Order order) {
@@ -286,6 +400,19 @@ public class StripeWebhookService {
         // If you have an email field on Order, use it here instead:
         // return order.getCustomerEmail();
         return null;
+    }
+
+    private void registerAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
     }
 }
 
