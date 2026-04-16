@@ -233,6 +233,7 @@ public class StripeWebhookService {
                 order.setPaymentStatus(PaymentStatus.PAID);
                 order.setPaidAt(LocalDateTime.now());
                 order.setStripePaymentIntentId(piId);
+                order.setUpdatedAt(LocalDateTime.now());
 
                 // ✅ IMPORTANT: enqueue AFTER COMMIT
                 registerAfterCommit(() -> enqueuePaymentSucceeded(order));
@@ -631,7 +632,7 @@ public class StripeWebhookService {
         } else {
             order.setRefundStatus(RefundStatus.PARTIAL);
         }
-
+        order.setUpdatedAt(LocalDateTime.now());
         orderRepo.save(order);
     }
 

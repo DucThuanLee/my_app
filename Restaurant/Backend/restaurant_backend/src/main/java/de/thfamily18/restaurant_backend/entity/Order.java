@@ -56,6 +56,12 @@ public class Order {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    LocalDateTime updatedAt;
+
+    @Column(nullable = false, length = 3)
+    @Builder.Default
+    private String currency = "EUR";
+
     // ================= STRIPE PAYMENT =================
     @Column(name = "stripe_payment_intent_id", unique = true)
     private String stripePaymentIntentId;
@@ -83,10 +89,16 @@ public class Order {
     @PrePersist
     void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
+        if (updatedAt == null) updatedAt = LocalDateTime.now();
         if (orderStatus == null) orderStatus = OrderStatus.NEW;
         if (paymentStatus == null) paymentStatus = PaymentStatus.PENDING;
         if (items == null) items = new ArrayList<>();
         if (refundedAmount == null) refundedAmount = BigDecimal.ZERO;
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     public void addItem(OrderItem item) {

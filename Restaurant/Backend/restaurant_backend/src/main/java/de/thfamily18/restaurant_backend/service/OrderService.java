@@ -149,7 +149,27 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         o.setOrderStatus(status);
+        o.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepo.save(o), lang);
+    }
+
+    public void adminDelete(UUID id) {
+
+        Order order = orderRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        // Do not delete orders that have already been paid/refunded.
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new IllegalStateException("Cannot delete paid order");
+        }
+
+        if (order.getPaymentStatus() == PaymentStatus.REFUNDED) {
+            throw new IllegalStateException("Cannot delete refunded order");
+        }
+
+        // Soft delete instead of hard delete
+        // TODO
+        orderRepo.delete(order);
     }
 
     // ===== Core builder =====
@@ -201,7 +221,6 @@ public class OrderService {
 
     private OrderResponse toResponse(Order o, String lang) {
         boolean de = lang != null && lang.toLowerCase().startsWith("de");
-
         List<OrderItemResponse> items = o.getItems().stream()
                 .map(oi -> OrderItemResponse.builder()
                         .productId(oi.getProduct().getId())
@@ -214,6 +233,7 @@ public class OrderService {
         return OrderResponse.builder()
                 .id(o.getId())
                 .totalPrice(o.getTotalPrice())
+                .refundedAmount(o.getRefundedAmount())
                 .paymentMethod(o.getPaymentMethod())
                 .paymentStatus(o.getPaymentStatus())
                 .orderStatus(o.getOrderStatus())

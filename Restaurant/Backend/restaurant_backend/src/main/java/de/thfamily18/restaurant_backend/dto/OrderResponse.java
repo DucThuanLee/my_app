@@ -17,6 +17,7 @@ public record OrderResponse(
 //        String phone,
 //        String address,
         BigDecimal totalPrice,
+        BigDecimal refundedAmount,
         PaymentMethod paymentMethod,
         PaymentStatus paymentStatus,
         OrderStatus orderStatus,
