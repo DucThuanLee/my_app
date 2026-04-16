@@ -52,6 +52,18 @@ export async function updateOrderStatus(
   return parseOrder(json);
 }
 
+export async function getAdminOrderById(id: string): Promise<Order> {
+  const url = backendUrl(`/api/admin/orders/${id}`);
+
+  const res = await fetch(url.toString(), {
+    headers: buildAuthHeaders(),
+    cache: "no-store"
+  });
+
+  const json = await readJsonOrThrow<unknown>(res, "Failed to fetch admin order");
+  return parseOrder(json);
+}
+
 export async function deleteOrder(orderId: string): Promise<void> {
   const url = backendUrl(`/api/admin/orders/${orderId}`);
 
@@ -62,5 +74,30 @@ export async function deleteOrder(orderId: string): Promise<void> {
 
   if (!res.ok) {
     throw new Error(`Failed to delete order: ${res.status} ${res.statusText}`);
+  }
+}
+
+// Refund order
+export type CreateRefundRequest = {
+  orderId: string;
+  amount?: number; // optional → null = full refund
+  reason?: string;
+};
+
+export async function refundOrder(payload: CreateRefundRequest): Promise<void> {
+  const url = backendUrl("/api/admin/payments/stripe/refunds");
+
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      ...buildAuthHeaders(),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Refund failed: ${text}`);
   }
 }

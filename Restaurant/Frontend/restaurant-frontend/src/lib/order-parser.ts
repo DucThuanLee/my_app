@@ -62,6 +62,7 @@ export function parseOrder(value: unknown): Order {
   const {
     id,
     totalPrice,
+    refundedAmount, // 👈 thêm
     paymentMethod,
     paymentStatus,
     orderStatus,
@@ -75,6 +76,17 @@ export function parseOrder(value: unknown): Order {
 
   if (typeof totalPrice !== "number" || !Number.isFinite(totalPrice)) {
     throw new Error("Invalid order: totalPrice must be a number");
+  }
+
+  // ✅ validate refundedAmount
+  let safeRefunded = 0;
+
+  if (refundedAmount != null) {
+    if (typeof refundedAmount !== "number" || !Number.isFinite(refundedAmount)) {
+      throw new Error("Invalid order: refundedAmount must be a number");
+    }
+
+    safeRefunded = refundedAmount;
   }
 
   if (!isPaymentMethod(paymentMethod)) {
@@ -100,6 +112,7 @@ export function parseOrder(value: unknown): Order {
   return {
     id,
     totalPrice,
+    refundedAmount: safeRefunded, 
     paymentMethod,
     paymentStatus,
     orderStatus,
