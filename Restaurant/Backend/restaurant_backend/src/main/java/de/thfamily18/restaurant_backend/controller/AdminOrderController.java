@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -81,6 +82,13 @@ public class AdminOrderController {
             @RequestHeader(name = "Accept-Language", defaultValue = "de") String lang
     ) {
         return service.adminUpdateStatus(id, req.status(), lang);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Admin delete order")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        service.adminDelete(id);
+        return ResponseEntity.noContent().build();
     }
 
 //    @GetMapping("/{id}")

@@ -29,6 +29,7 @@ export interface OrderItem {
 export interface Order {
   id: string;
   totalPrice: number;
+  refundedAmount?: number;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;

@@ -16,6 +16,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findAllByUser(User user, Pageable pageable);
     Page<Order> findAllByUserEmail(String email, Pageable pageable);
     Page<Order> findAllByUserEmailAndOrderStatus(String email, OrderStatus status, Pageable pageable);
+    Optional<Order> findByPaypalOrderId(String paypalOrderId);
+    Optional<Order> findByPaypalCaptureId(String paypalCaptureId);
 //    @EntityGraph(attributePaths = {"items", "items.product"})
 //    Page<Order> findAllByUser_Id(UUID userId, Pageable pageable);
 //

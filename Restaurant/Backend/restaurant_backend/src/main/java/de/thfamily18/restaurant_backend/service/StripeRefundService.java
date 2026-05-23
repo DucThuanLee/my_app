@@ -8,7 +8,7 @@ import de.thfamily18.restaurant_backend.dto.payment.RefundResponse;
 import de.thfamily18.restaurant_backend.entity.Order;
 import de.thfamily18.restaurant_backend.entity.PaymentStatus;
 import de.thfamily18.restaurant_backend.entity.RefundStatus;
-import de.thfamily18.restaurant_backend.entity.StripeRefundStatus;
+import de.thfamily18.restaurant_backend.entity.RefundProviderStatus;
 import de.thfamily18.restaurant_backend.exception.ResourceNotFoundException;
 import de.thfamily18.restaurant_backend.repository.OrderRepository;
 import de.thfamily18.restaurant_backend.repository.RefundRepository;
@@ -108,7 +108,7 @@ public class StripeRefundService {
                 .order(order)
                 .stripeRefundId(refund.getId())
                 .amount(refundAmount)
-                .status(StripeRefundStatus.PENDING) // ✅ NEVER trust API
+                .status(RefundProviderStatus.PENDING) // ✅ NEVER trust API
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -131,7 +131,7 @@ public class StripeRefundService {
                 order.getId(),
                 order.getStripePaymentIntentId(),
                 refund.getId(),
-                StripeRefundStatus.PENDING, // ✅ always pending
+                RefundProviderStatus.PENDING, // ✅ always pending
                 order.getPaymentStatus(),
                 refundAmount,
                 refundEntity.getCreatedAt()

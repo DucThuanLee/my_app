@@ -51,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/payments/stripe/intents").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/payments/stripe/status/**").permitAll() // if you use polling
                         .requestMatchers(HttpMethod.OPTIONS, "/api/payments/stripe/intents").permitAll()
+                        // webhook
+                        .requestMatchers("/api/payments/paypal/webhook").permitAll()
 
                         // ===== Admin =====
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

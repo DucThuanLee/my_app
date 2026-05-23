@@ -20,7 +20,6 @@ import tools.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -574,7 +573,7 @@ public class StripeWebhookService {
         String reason = obj.path("reason").asText(null);
         String failureReason = obj.path("failure_reason").asText(null);
 
-        StripeRefundStatus status = StripeRefundStatus.fromStripe(statusRaw);
+        RefundProviderStatus status = RefundProviderStatus.fromProvider(statusRaw);
 
         // 🔥 UPSERT (IDEMPOTENT)
         Refund refund = refundRepo.findByStripeRefundId(refundId).orElse(null);

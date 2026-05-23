@@ -68,6 +68,13 @@ public class Order {
 
     private LocalDateTime paidAt;
 
+    // Paypal payment
+    @Column(name = "paypal_order_id", unique = true)
+    private String paypalOrderId;
+    @Column(name = "paypal_capture_id", unique = true)
+    private String paypalCaptureId;
+    //private LocalDateTime paypalApprovedAt; // optional ???
+
     // ================= REFUND (BUSINESS STATE) =================
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

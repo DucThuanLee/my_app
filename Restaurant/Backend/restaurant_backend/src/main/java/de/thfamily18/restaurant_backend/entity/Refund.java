@@ -11,7 +11,8 @@ import java.util.UUID;
 @Table(
         name = "refunds",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_stripe_refund_id", columnNames = "stripe_refund_id")
+                @UniqueConstraint(name = "uk_stripe_refund_id", columnNames = "stripe_refund_id"),
+                @UniqueConstraint(name = "uk_paypal_refund_id", columnNames = "paypal_refund_id")
         }
 )
 @Getter
@@ -31,11 +32,18 @@ public class Refund {
     private Order order;
 
     // ===== STRIPE =====
-    @Column(name = "stripe_refund_id", nullable = false, updatable = false)
+    @Column(name = "stripe_refund_id", updatable = false)
     private String stripeRefundId;
 
     @Column(name = "stripe_charge_id")
     private String stripeChargeId;
+
+    // Pappal
+    @Column(name = "paypal_refund_id", updatable = false)
+    private String paypalRefundId;
+
+    @Column(name = "paypal_capture_id")
+    private String paypalCaptureId;
 
     // ===== MONEY =====
     @Column(nullable = false, precision = 12, scale = 2)
@@ -44,7 +52,7 @@ public class Refund {
     // ===== STATUS =====
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StripeRefundStatus status;
+    private RefundProviderStatus status;
 
     // ===== OPTIONAL =====
     @Column(length = 50)

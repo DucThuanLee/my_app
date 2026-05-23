@@ -71,6 +71,13 @@ stripe:
   secretKey: ${STRIPE_SECRET_KEY}          # sk_test_...
   webhookSecret: ${STRIPE_WEBHOOK_SECRET}  # whsec_... (Stripe CLI listen or dashboard)
 
+paypal:
+  client-id: ${PAYPAL_CLIENT_ID}
+  client-secret: ${PAYPAL_CLIENT_SECRET}
+  environment: sandbox # sandbox | production
+  webhook-id: ${PAYPAL_WEBHOOK_ID}
+  baseUrl: ${PAYPAL_BASE_URL} # production: https://api-m.paypal.com/v2/
+
 management:
   endpoints:
     web:

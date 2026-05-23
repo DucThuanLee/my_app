@@ -1,4 +1,3 @@
 package de.thfamily18.restaurant_backend.entity;
 
-
-public enum PaymentMethod { STRIPE, PAYPAL, COD }
+public enum PaymentMethod { STRIPE, PAYPAL, KLARNA, COD }

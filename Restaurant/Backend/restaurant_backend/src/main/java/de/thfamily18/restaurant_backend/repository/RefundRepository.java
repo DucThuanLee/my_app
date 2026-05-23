@@ -1,9 +1,10 @@
 package de.thfamily18.restaurant_backend.repository;
 
 import de.thfamily18.restaurant_backend.entity.Refund;
-import de.thfamily18.restaurant_backend.entity.StripeRefundStatus;
+import de.thfamily18.restaurant_backend.entity.RefundProviderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -37,6 +38,17 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     """)
     BigDecimal sumSucceededAmountByOrderId(UUID orderId);
 
+    @Query("""
+        select coalesce(sum(r.amount), 0)
+        from Refund r
+        where r.order.id = :orderId
+          and r.status = :status
+    """)
+    BigDecimal sumAmountByOrderIdAndStatus(
+            @Param("orderId") UUID orderId,
+            @Param("status") RefundProviderStatus status
+    );
+
     /**
      * Optional: get latest refund (useful for UI/debug)
      */
@@ -45,5 +57,7 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     /**
      * Optional: filter by status
      */
-    List<Refund> findAllByOrderIdAndStatus(UUID orderId, StripeRefundStatus status);
+    List<Refund> findAllByOrderIdAndStatus(UUID orderId, RefundProviderStatus status);
+
+    Optional<Refund> findByPaypalRefundId(String paypalRefundId);
 }
