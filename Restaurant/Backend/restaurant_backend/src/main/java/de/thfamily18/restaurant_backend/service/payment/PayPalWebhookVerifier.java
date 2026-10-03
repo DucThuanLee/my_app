@@ -1,11 +1,10 @@
 package de.thfamily18.restaurant_backend.service.payment;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.JsonNode;
 
 import java.util.Map;
 
@@ -42,7 +41,7 @@ public class PayPalWebhookVerifier {
                 "webhook_event", webhookEvent
         );
 
-        VerifyResponse res = restClientBuilder
+        JsonNode res = restClientBuilder
                 .baseUrl(baseUrl)
                 .build()
                 .post()
@@ -50,13 +49,12 @@ public class PayPalWebhookVerifier {
                 .headers(h -> h.setBearerAuth(accessToken))
                 .body(body)
                 .retrieve()
-                .body(VerifyResponse.class);
+                .body(JsonNode.class);
 
-        return res != null && "SUCCESS".equalsIgnoreCase(res.verificationStatus());
+        String status = res == null
+                ? null
+                : res.path("verification_status").asText(null);
+
+        return "SUCCESS".equalsIgnoreCase(status);
     }
-
-    public record VerifyResponse(
-            @JsonProperty("verification_status")
-            String verificationStatus
-    ) {}
 }

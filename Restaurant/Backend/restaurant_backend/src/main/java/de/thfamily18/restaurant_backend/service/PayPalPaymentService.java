@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -50,10 +52,13 @@ public class PayPalPaymentService {
         JsonNode res = restClientBuilder.baseUrl(baseUrl).build()
                 .post()
                 .uri("/v2/checkout/orders")
-                .headers(h -> h.setBearerAuth(authClient.getAccessToken()))
+                .headers(h -> {
+                    h.setBearerAuth(authClient.getAccessToken());
+                    h.set("PayPal-Request-Id", "create-order-" + order.getId());
+                })
                 .body(Map.of(
                         "intent", "CAPTURE",
-                        "purchase_units", java.util.List.of(Map.of(
+                        "purchase_units", List.of(Map.of(
                                 "reference_id", order.getId().toString(),
                                 "description", "Order " + order.getId(),
                                 "amount", Map.of(
@@ -65,7 +70,8 @@ public class PayPalPaymentService {
                 .retrieve()
                 .body(JsonNode.class);
 
-        String paypalOrderId = res.path("id").asText(null);
+        String paypalOrderId = res != null ? res.path("id").asText(null) : null;
+
         if (paypalOrderId == null || paypalOrderId.isBlank()) {
             throw new IllegalStateException("PayPal create order returned no id");
         }
@@ -74,16 +80,25 @@ public class PayPalPaymentService {
         order.setUpdatedAt(LocalDateTime.now());
         orderRepo.save(order);
 
+        log.info("PayPal order created. orderId={}, paypalOrderId={}", order.getId(), paypalOrderId);
+
         return new CreatePayPalOrderResponse(paypalOrderId);
     }
 
     @Transactional
     public CapturePayPalOrderResponse captureOrder(String paypalOrderId) {
         Order order = orderRepo.findByPaypalOrderId(paypalOrderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found by PayPal order id: " + paypalOrderId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Order not found by PayPal order id: " + paypalOrderId
+                ));
 
         if (order.getPaymentStatus() == PaymentStatus.PAID) {
-            return new CapturePayPalOrderResponse(order.getId(), order.getPaypalOrderId(), order.getPaypalCaptureId(), order.getPaymentStatus());
+            return new CapturePayPalOrderResponse(
+                    order.getId(),
+                    order.getPaypalOrderId(),
+                    order.getPaypalCaptureId(),
+                    order.getPaymentStatus()
+            );
         }
 
         if (order.getPaymentStatus() == PaymentStatus.REFUNDED) {
@@ -93,30 +108,57 @@ public class PayPalPaymentService {
         JsonNode res = restClientBuilder.baseUrl(baseUrl).build()
                 .post()
                 .uri("/v2/checkout/orders/{paypalOrderId}/capture", paypalOrderId)
-                .headers(h -> h.setBearerAuth(authClient.getAccessToken()))
+                .headers(h -> {
+                    h.setBearerAuth(authClient.getAccessToken());
+                    h.set("PayPal-Request-Id", "capture-" + paypalOrderId);
+                })
                 .body(Map.of())
                 .retrieve()
                 .body(JsonNode.class);
 
-        String status = res.path("status").asText(null);
-        String captureId = res.path("purchase_units")
-                .path(0).path("payments").path("captures")
-                .path(0).path("id").asText(null);
-
-        if ("COMPLETED".equalsIgnoreCase(status)) {
-            order.setPaypalCaptureId(captureId);
-            order.setPaymentStatus(PaymentStatus.PAID);
-            order.setPaidAt(LocalDateTime.now());
-            order.setUpdatedAt(LocalDateTime.now());
-            orderRepo.save(order);
+        if (res == null) {
+            throw new IllegalStateException("PayPal capture returned empty response");
         }
 
-        return new CapturePayPalOrderResponse(order.getId(), order.getPaypalOrderId(), order.getPaypalCaptureId(), order.getPaymentStatus());
+        String status = res.path("status").asText(null);
+        String captureId = extractCaptureId(res);
+
+        log.info("PayPal capture result. paypalOrderId={}, status={}, captureId={}",
+                paypalOrderId, status, captureId);
+
+        if (captureId != null && !captureId.isBlank()) {
+            order.setPaypalCaptureId(captureId);
+        }
+
+        if ("COMPLETED".equalsIgnoreCase(status)) {
+            order.setPaymentStatus(PaymentStatus.PAID);
+            order.setPaidAt(LocalDateTime.now());
+
+        } else if ("PENDING".equalsIgnoreCase(status)) {
+            order.setPaymentStatus(PaymentStatus.PROCESSING);
+
+        } else {
+            order.setPaymentStatus(PaymentStatus.FAILED);
+            order.setUpdatedAt(LocalDateTime.now());
+            orderRepo.save(order);
+
+            throw new IllegalStateException("PayPal capture failed with status: " + status);
+        }
+
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepo.save(order);
+
+        return new CapturePayPalOrderResponse(
+                order.getId(),
+                order.getPaypalOrderId(),
+                order.getPaypalCaptureId(),
+                order.getPaymentStatus()
+        );
     }
 
     @Transactional
     public PayPalRefundResponse fullRefund(String paypalOrderId) {
-        Order order = loadPaidOrder(paypalOrderId);
+        Order order = loadRefundableOrder(paypalOrderId);
 
         if (order.getPaypalCaptureId() == null || order.getPaypalCaptureId().isBlank()) {
             throw new IllegalStateException("Order has no PayPal capture id");
@@ -125,23 +167,27 @@ public class PayPalPaymentService {
         BigDecimal alreadyRefunded = order.getRefundedAmount() == null
                 ? BigDecimal.ZERO
                 : order.getRefundedAmount();
+
         BigDecimal remaining = order.getTotalPrice().subtract(alreadyRefunded);
+
         if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalStateException("Order is already fully refunded");
         }
 
-        return refund(order, null);
+        return refund(order, remaining);
     }
 
     @Transactional
     public PayPalRefundResponse partialRefund(String paypalOrderId, BigDecimal amount) {
-        Order order = loadPaidOrder(paypalOrderId);
+        Order order = loadRefundableOrder(paypalOrderId);
 
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Refund amount must be greater than 0");
         }
 
-        BigDecimal alreadyRefunded = order.getRefundedAmount() == null ? BigDecimal.ZERO : order.getRefundedAmount();
+        BigDecimal alreadyRefunded = order.getRefundedAmount() == null
+                ? BigDecimal.ZERO
+                : order.getRefundedAmount();
 
         if (alreadyRefunded.add(amount).compareTo(order.getTotalPrice()) > 0) {
             throw new IllegalArgumentException("Refund exceeds order total");
@@ -151,20 +197,32 @@ public class PayPalPaymentService {
     }
 
     private PayPalRefundResponse refund(Order order, BigDecimal amount) {
-        Map<String, Object> body = amount == null
-                ? Map.of()
-                : Map.of("amount", Map.of(
-                "currency_code", order.getCurrency(),
-                "value", amount.toPlainString()
-        ));
+        Map<String, Object> body = Map.of(
+                "amount", Map.of(
+                        "currency_code", order.getCurrency(),
+                        "value", amount.toPlainString()
+                )
+        );
+
+        // Stable idempotency key for the same order + same refund amount.
+        // This prevents double refund when the same request is retried because of network timeout.
+        String amountKey = amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
+        String idempotencyKey = "refund-" + order.getId() + "-" + amountKey;
 
         JsonNode res = restClientBuilder.baseUrl(baseUrl).build()
                 .post()
                 .uri("/v2/payments/captures/{captureId}/refund", order.getPaypalCaptureId())
-                .headers(h -> h.setBearerAuth(authClient.getAccessToken()))
+                .headers(h -> {
+                    h.setBearerAuth(authClient.getAccessToken());
+                    h.set("PayPal-Request-Id", idempotencyKey);
+                })
                 .body(body)
                 .retrieve()
                 .body(JsonNode.class);
+
+        if (res == null) {
+            throw new IllegalStateException("PayPal refund returned empty response");
+        }
 
         String paypalRefundId = res.path("id").asText(null);
         String statusRaw = res.path("status").asText(null);
@@ -172,10 +230,6 @@ public class PayPalPaymentService {
         if (paypalRefundId == null || paypalRefundId.isBlank()) {
             throw new IllegalStateException("PayPal refund returned no id");
         }
-
-        BigDecimal refundAmount = amount != null
-                ? amount
-                : order.getTotalPrice().subtract(order.getRefundedAmount() == null ? BigDecimal.ZERO : order.getRefundedAmount());
 
         RefundProviderStatus status = RefundProviderStatus.fromProvider(statusRaw);
 
@@ -186,7 +240,7 @@ public class PayPalPaymentService {
                     .order(order)
                     .paypalRefundId(paypalRefundId)
                     .paypalCaptureId(order.getPaypalCaptureId())
-                    .amount(refundAmount)
+                    .amount(amount)
                     .status(status)
                     .createdAt(LocalDateTime.now())
                     .build();
@@ -197,9 +251,14 @@ public class PayPalPaymentService {
         refundRepo.save(refund);
 
         BigDecimal totalRefunded = refundRepo.sumSucceededAmountByOrderId(order.getId());
-        if (totalRefunded == null) totalRefunded = BigDecimal.ZERO;
+        if (totalRefunded == null) {
+            totalRefunded = BigDecimal.ZERO;
+        }
 
         updateOrderRefundState(order, totalRefunded);
+
+        log.info("PayPal refund requested. orderId={}, paypalRefundId={}, status={}, amount={}, totalRefunded={}",
+                order.getId(), paypalRefundId, statusRaw, amount, totalRefunded);
 
         return new PayPalRefundResponse(
                 order.getId(),
@@ -210,12 +269,19 @@ public class PayPalPaymentService {
         );
     }
 
-    private Order loadPaidOrder(String paypalOrderId) {
+    private Order loadRefundableOrder(String paypalOrderId) {
         Order order = orderRepo.findByPaypalOrderId(paypalOrderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found by PayPal order id: " + paypalOrderId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Order not found by PayPal order id: " + paypalOrderId
+                ));
 
         if (order.getPaymentStatus() != PaymentStatus.PAID) {
             throw new IllegalStateException("Only PAID orders can be refunded");
+        }
+
+        if (order.getRefundStatus() == RefundStatus.REFUNDED
+                || order.getPaymentStatus() == PaymentStatus.REFUNDED) {
+            throw new IllegalStateException("Order is already fully refunded");
         }
 
         return order;
@@ -224,10 +290,14 @@ public class PayPalPaymentService {
     private void updateOrderRefundState(Order order, BigDecimal totalRefunded) {
         order.setRefundedAmount(totalRefunded);
 
+        BigDecimal totalPrice = order.getTotalPrice() == null
+                ? BigDecimal.ZERO
+                : order.getTotalPrice();
+
         if (totalRefunded.compareTo(BigDecimal.ZERO) == 0) {
             order.setRefundStatus(RefundStatus.REQUESTED);
 
-        } else if (totalRefunded.compareTo(order.getTotalPrice()) >= 0) {
+        } else if (totalRefunded.compareTo(totalPrice) >= 0) {
             order.setRefundStatus(RefundStatus.REFUNDED);
             order.setPaymentStatus(PaymentStatus.REFUNDED);
             order.setRefundedAt(LocalDateTime.now());
@@ -238,5 +308,18 @@ public class PayPalPaymentService {
 
         order.setUpdatedAt(LocalDateTime.now());
         orderRepo.save(order);
+    }
+
+    private String extractCaptureId(JsonNode res) {
+        JsonNode capturesNode = res.path("purchase_units")
+                .path(0)
+                .path("payments")
+                .path("captures");
+
+        if (!capturesNode.isArray() || capturesNode.isEmpty()) {
+            return null;
+        }
+
+        return capturesNode.path(0).path("id").asText(null);
     }
 }
