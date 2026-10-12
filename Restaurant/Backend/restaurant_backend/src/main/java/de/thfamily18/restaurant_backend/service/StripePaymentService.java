@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -72,12 +73,17 @@ public class StripePaymentService {
 
         // 6. Amount in cents
         // robust rounding (e.g. 7.8 -> 780, 7.805 -> 781)
-        long amount = toCents(order.getTotalPrice());
+        long amount = toMinorUnits(order.getTotalPrice());
 
         // Build PaymentIntent params
+        String currency = order.getCurrency();
+        if (currency == null || currency.isBlank()) {
+            throw new IllegalStateException("Order currency is missing");
+        }
+        currency = currency.toLowerCase(Locale.ROOT);
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 .setAmount(amount)
-                .setCurrency("eur")
+                .setCurrency(currency)
                 // only for testing
                 .setAutomaticPaymentMethods(
                         PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
@@ -121,7 +127,7 @@ public class StripePaymentService {
         );
     }
 
-    private long toCents(BigDecimal eur) {
+    private long toMinorUnits(BigDecimal eur) {
         // robust rounding (e.g. 7.8 -> 780, 7.805 -> 781)
         return eur.movePointRight(2)
                 .setScale(0, RoundingMode.HALF_UP)

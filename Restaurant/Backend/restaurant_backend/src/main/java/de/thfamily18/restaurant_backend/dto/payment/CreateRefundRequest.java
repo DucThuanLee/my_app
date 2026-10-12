@@ -7,10 +7,15 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record CreateRefundRequest(
-        @NotNull UUID orderId,
-        // null = full refund
-        @DecimalMin(value = "0.01", message = "Refund amount must be > 0")
+        @NotNull
+        UUID orderId,
+        @NotNull
+        UUID requestId,
+        // null = refund all remaining amount
+        @DecimalMin(
+                value = "0.01",
+                message = "Refund amount must be greater than or equal to 0.01"
+        )
         BigDecimal amount,
-        // optional: customer_request, duplicate, fraud, etc.
         String reason
 ) {}

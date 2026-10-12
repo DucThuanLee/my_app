@@ -41,9 +41,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
 
                         // Guest checkout: create order
+                        // Logged-in user
                         .requestMatchers(HttpMethod.GET, "/api/orders/me").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/orders", "/api/orders/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/orders", "/api/orders/**").permitAll()
+                        // Guest checkout
+                        .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
+                        //.requestMatchers(HttpMethod.GET, "/api/orders", "/api/orders/**").permitAll()
+                        // CORS preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/api/orders", "/api/orders/**").permitAll()
 
                         // Stripe: webhook + create intent (guest can pay)

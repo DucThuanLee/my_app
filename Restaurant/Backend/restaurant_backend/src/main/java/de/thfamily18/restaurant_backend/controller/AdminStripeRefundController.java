@@ -66,6 +66,7 @@ public class AdminStripeRefundController {
 
         RefundResponse res = refundService.refundOrder(
                 req.orderId(),
+                req.requestId(),
                 req.amount(),
                 req.reason()
         );

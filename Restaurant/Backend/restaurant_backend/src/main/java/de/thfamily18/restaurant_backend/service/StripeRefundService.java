@@ -7,22 +7,19 @@ import com.stripe.param.RefundCreateParams;
 import de.thfamily18.restaurant_backend.dto.payment.RefundResponse;
 import de.thfamily18.restaurant_backend.entity.Order;
 import de.thfamily18.restaurant_backend.entity.PaymentStatus;
-import de.thfamily18.restaurant_backend.entity.RefundStatus;
 import de.thfamily18.restaurant_backend.entity.RefundProviderStatus;
 import de.thfamily18.restaurant_backend.exception.ResourceNotFoundException;
 import de.thfamily18.restaurant_backend.repository.OrderRepository;
-import de.thfamily18.restaurant_backend.repository.RefundRepository;
 import de.thfamily18.restaurant_backend.service.payment.StripeGateway;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -32,139 +29,189 @@ public class StripeRefundService {
 
     private final StripeGateway stripeGateway;
     private final OrderRepository orderRepo;
-    private final RefundRepository refundRepo;
 
     @Value("${stripe.secretKey:}")
     private String stripeSecretKey;
 
-    @Transactional
-    public RefundResponse refundOrder(UUID orderId, BigDecimal amount, String reason)
-            throws StripeException {
+    public RefundResponse refundOrder(
+            UUID orderId,
+            UUID requestId,
+            BigDecimal amount,
+            String reason
+    ) throws StripeException {
 
         // ===== 1. Load order =====
         Order order = orderRepo.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Order not found: " + orderId
+                        )
+                );
 
-        // ===== 2. Validate business rules =====
-        if (order.getStripePaymentIntentId() == null || order.getStripePaymentIntentId().isBlank()) {
-            throw new IllegalArgumentException("Order has no Stripe payment intent");
+        // ===== 2. Validate payment =====
+        if (order.getStripePaymentIntentId() == null
+                || order.getStripePaymentIntentId().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Order has no Stripe payment intent"
+            );
         }
 
         if (order.getPaymentStatus() != PaymentStatus.PAID) {
-            throw new IllegalArgumentException("Only PAID orders can be refunded");
+            throw new IllegalArgumentException(
+                    "Only PAID orders can be refunded"
+            );
         }
 
-        if (order.getRefundStatus() == RefundStatus.REQUESTED) {
-            throw new IllegalStateException("Refund already requested");
+        if (order.getTotalPrice() == null
+                || order.getTotalPrice().compareTo(BigDecimal.ZERO) <= 0) {
+
+            throw new IllegalStateException(
+                    "Order has invalid total price"
+            );
         }
 
-        // ===== 3. Handle partial refund amount =====
-        Long amountInCents = null;
+        // ===== 3. Calculate refundable amount =====
+        BigDecimal alreadyRefunded =
+                order.getRefundedAmount() == null
+                        ? BigDecimal.ZERO
+                        : order.getRefundedAmount();
 
-        if (amount != null) {
-            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException("Refund amount must be greater than 0");
-            }
+        BigDecimal remaining =
+                order.getTotalPrice().subtract(alreadyRefunded);
 
-            BigDecimal alreadyRefunded = order.getRefundedAmount() == null
-                    ? BigDecimal.ZERO
-                    : order.getRefundedAmount();
+        if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException(
+                    "Order has no refundable amount remaining"
+            );
+        }
 
-            if (order.getTotalPrice() != null &&
-                    alreadyRefunded.add(amount).compareTo(order.getTotalPrice()) > 0) {
-                throw new IllegalArgumentException("Refund exceeds total amount");
-            }
+        BigDecimal refundAmount =
+                amount == null ? remaining : amount;
 
-            amountInCents = toCents(amount);
+        if (refundAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "Refund amount must be greater than 0"
+            );
+        }
+
+        if (refundAmount.compareTo(remaining) > 0) {
+            throw new IllegalArgumentException(
+                    "Refund amount exceeds remaining refundable amount"
+            );
         }
 
         // ===== 4. Build Stripe refund request =====
-        RefundCreateParams.Builder builder = RefundCreateParams.builder()
-                .setPaymentIntent(order.getStripePaymentIntentId());
+        RefundCreateParams.Builder builder =
+                RefundCreateParams.builder()
+                        .setPaymentIntent(
+                                order.getStripePaymentIntentId()
+                        )
+                        .setAmount(
+                                toCents(refundAmount)
+                        );
 
-        if (amountInCents != null) {
-            builder.setAmount(amountInCents); // partial refund
-        }
+        RefundCreateParams.Reason stripeReason =
+                mapReason(reason);
 
-        if (reason != null && !reason.isBlank()) {
-            builder.setReason(mapReason(reason));
+        if (stripeReason != null) {
+            builder.setReason(stripeReason);
         }
 
         RefundCreateParams params = builder.build();
 
-        // ===== 5. Call Stripe with idempotency =====
-        String idempotencyKey = "refund:" + order.getId() +
-                (amount != null ? ":" + amount : "");
+        // ===== 5. Stable idempotency key =====
+        String idempotencyKey =
+                "refund:"
+                        + order.getId()
+                        + ":"
+                        + requestId;
 
+        // ===== 6. Call Stripe =====
         Refund refund = stripeGateway.createRefund(
                 params,
                 requestOptions(idempotencyKey)
         );
 
-// ===== 6. Save refund (INITIAL STATE) =====
-        BigDecimal refundAmount = amount != null ? amount : order.getTotalPrice();
+        /*
+         * Do not persist the Refund here.
+         *
+         * Stripe webhook is the source of truth and is responsible for
+         * upserting the refund and updating the Order refund aggregate.
+         *
+         * This avoids racing the HTTP request transaction against Stripe
+         * webhook delivery.
+         */
+        log.info(
+                "Stripe refund requested. orderId={}, refundId={}, requestId={}, amount={}, status={}",
+                orderId,
+                refund.getId(),
+                requestId,
+                refundAmount,
+                refund.getStatus()
+        );
 
-        var refundEntity = de.thfamily18.restaurant_backend.entity.Refund.builder()
-                .order(order)
-                .stripeRefundId(refund.getId())
-                .amount(refundAmount)
-                .status(RefundProviderStatus.PENDING) // ✅ NEVER trust API
-                .createdAt(LocalDateTime.now())
-                .build();
-
-// ===== Save immediately (race-safe) =====
-        try {
-            refundRepo.saveAndFlush(refundEntity); // ✅ CRITICAL
-        } catch (DataIntegrityViolationException e) {
-            log.warn("Duplicate refund detected, ignoring. refundId={}", refund.getId());
-        }
-        log.info("Refund requested. orderId={}, refundId={}, status={}",
-                orderId, refund.getId(), refund.getStatus());
-
-// ===== 7. Update order =====
-        order.setRefundStatus(RefundStatus.REQUESTED);
-
-        orderRepo.save(order);
-
-// ===== 8. Response =====
+        // ===== 7. Response =====
         return new RefundResponse(
                 order.getId(),
                 order.getStripePaymentIntentId(),
                 refund.getId(),
-                RefundProviderStatus.PENDING, // ✅ always pending
+                RefundProviderStatus.PENDING,
                 order.getPaymentStatus(),
                 refundAmount,
-                refundEntity.getCreatedAt()
+                LocalDateTime.now()
         );
     }
-    // ===== helper =====
 
-    private long toCents(BigDecimal eur) {
-        return eur.movePointRight(2)
+    private long toCents(BigDecimal amount) {
+        return amount.movePointRight(2)
                 .setScale(0, RoundingMode.HALF_UP)
                 .longValueExact();
     }
 
     private RefundCreateParams.Reason mapReason(String reason) {
-        return switch (reason.toLowerCase()) {
-            case "duplicate" -> RefundCreateParams.Reason.DUPLICATE;
-            case "fraudulent" -> RefundCreateParams.Reason.FRAUDULENT;
-            case "requested_by_customer" -> RefundCreateParams.Reason.REQUESTED_BY_CUSTOMER;
-            default -> null;
+
+        if (reason == null || reason.isBlank()) {
+            return null;
+        }
+
+        return switch (reason.toLowerCase(Locale.ROOT)) {
+
+            case "duplicate" ->
+                    RefundCreateParams.Reason.DUPLICATE;
+
+            case "fraudulent" ->
+                    RefundCreateParams.Reason.FRAUDULENT;
+
+            case "requested_by_customer" ->
+                    RefundCreateParams.Reason.REQUESTED_BY_CUSTOMER;
+
+            default ->
+                    throw new IllegalArgumentException(
+                            "Unsupported refund reason: " + reason
+                    );
         };
     }
 
-    private RequestOptions requestOptions(String idempotencyKey) {
-        RequestOptions.RequestOptionsBuilder b = RequestOptions.builder();
+    private RequestOptions requestOptions(
+            String idempotencyKey
+    ) {
 
-        if (stripeSecretKey != null && !stripeSecretKey.isBlank()) {
-            b.setApiKey(stripeSecretKey);
+        RequestOptions.RequestOptionsBuilder builder =
+                RequestOptions.builder();
+
+        if (stripeSecretKey != null
+                && !stripeSecretKey.isBlank()) {
+
+            builder.setApiKey(stripeSecretKey);
         }
 
-        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
-            b.setIdempotencyKey(idempotencyKey);
+        if (idempotencyKey != null
+                && !idempotencyKey.isBlank()) {
+
+            builder.setIdempotencyKey(idempotencyKey);
         }
 
-        return b.build();
+        return builder.build();
     }
 }
